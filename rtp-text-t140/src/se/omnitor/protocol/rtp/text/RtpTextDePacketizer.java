@@ -33,6 +33,7 @@ package se.omnitor.protocol.rtp.text;
 import java.util.Hashtable;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Logger;
 
 import javax.media.Buffer;
 import javax.media.Codec;
@@ -80,13 +81,15 @@ public class RtpTextDePacketizer {
     private int redundantGenerations = 0;
     private boolean redFlagIncoming = false;
 
-    private int t140PayloadType = 96;
-    private int signedT140PayloadType = -32; 
+    private int t140PayloadType;
+    private byte signedT140PayloadType; 
 
     private Timer timer = null;
     private LossTimerTask task = null;
 
     private boolean firstPacket = true;
+
+    private Logger logger;
 
 
     /**
@@ -98,12 +101,14 @@ public class RtpTextDePacketizer {
     public RtpTextDePacketizer(int t140PayloadType, int redPt, 
 			       boolean redFlagIncoming) {
 
+	logger = Logger.getLogger("se.omnitor.protocol.rtp.text");
+
         this.t140PayloadType = t140PayloadType;
         this.redFlagIncoming = redFlagIncoming;
     
         timer = new Timer();
 
-        signedT140PayloadType = t140PayloadType - 128;
+        signedT140PayloadType = (byte)((byte)t140PayloadType | (byte)0x80);
 
         missingPackets  = new Hashtable(10);
         receivedPackets = new Hashtable(30);
@@ -369,47 +374,26 @@ public class RtpTextDePacketizer {
      * 
      * @return The number of redundant generations in this packet.
      */
-    private int getRedundantGenerations(byte[] data) {
+    public int getRedundantGenerations(byte[] data) {
 
-        int primaryHeaderStart = 0;
-        boolean checkRedundant = true;
+	int walker = 0;
+	int redGens = 0;
 
-        //Check for the location of the primary header
-        while (data[primaryHeaderStart] != t140PayloadType && 
-               primaryHeaderStart<(data.length-1)) {
-            primaryHeaderStart += 4;
-        }
-    
-        //No primary header found or in the wrong place 
-        //(ie not really a header).
-        if ((primaryHeaderStart!=(data.length-1)) &&
-            (((primaryHeaderStart) % 
-	      TextConstants.REDUNDANT_HEADER_SIZE)==0)) {
-	    
-            //Check that signed t140 payloads on corresponding
-            //bytes previous to the t140 payload
-        
-            redundantGenerations=(primaryHeaderStart)/4;
-            for (int i=0;i<redundantGenerations;i++) {
+	while (data[walker] == signedT140PayloadType) {
+	    redGens++;
+	    walker += TextConstants.REDUNDANT_HEADER_SIZE;
+	}
 
-                if (data[i*TextConstants.REDUNDANT_HEADER_SIZE]!=
-                    signedT140PayloadType) {
-                    checkRedundant=false;
-                }
-            }
-            if (!checkRedundant) {
+	if (data[walker] != t140PayloadType) {
+	    logger.warning("Malformed redundancy in RTP text packet, could " +
+			   "not fint primary data!");
 
-                redundantGenerations=0;
-            }
-        }
-        else {
+	    redGens = 0;
+	}
 
-            redundantGenerations=0;
-        }
+	return redGens;
 
-        return redundantGenerations;
     }
-
 
     /**
      * Utility function that extracts the data associated with a certain
