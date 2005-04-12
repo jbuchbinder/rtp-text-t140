@@ -55,6 +55,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
     private int bufferTime;
     private boolean running;
     private Thread thread;
+    private Integer dataSetSemaphore;
     
     /**
      * Initializes.
@@ -67,6 +68,8 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
     public SyncBuffer(int redGen, int bufferTime) {
 	this.redGen = redGen;
 	this.bufferTime = bufferTime;
+
+	dataSetSemaphore = new Integer(0);
 	
 	dataWaiting = new byte[0];
 	dataToSend = new byte[0];
@@ -101,42 +104,46 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
      * buffer, remove characters from buffer instead of sending backspace.
      */
     public synchronized void setData(byte[] newData) {
-	byte[] temp = null;
-
-	if (dataWaiting.length == 0) {
-	    dataWaiting = newData;
-	}
-	else {
-	    temp = dataWaiting;
-	    dataWaiting = new byte[temp.length + newData.length];
-	    System.arraycopy(temp, 0, dataWaiting, 0, temp.length);
-	    System.arraycopy(newData, 0, dataWaiting, temp.length, 
-			     newData.length);
-	}
-
-	/*
-	int arrayCnt = temp.length;
-	int cnt;
-	for (cnt=0; cnt<data.length; cnt++) {
-	    if (data[cnt] == TextConstants.BACKSPACE &&
-		arrayCnt > 0 &&
-		(int)this.data[arrayCnt-1] != 8) {
-		
-		arrayCnt--;
+	synchronized (dataSetSemaphore) {
+	    byte[] temp = null;
+	    
+	    if (dataWaiting.length == 0) {
+		dataWaiting = newData;
 	    }
 	    else {
-		this.data[arrayCnt] = data[cnt];
-
-		arrayCnt++;
+		temp = dataWaiting;
+		dataWaiting = new byte[temp.length + newData.length];
+		System.arraycopy(temp, 0, dataWaiting, 0, temp.length);
+		System.arraycopy(newData, 0, dataWaiting, temp.length, 
+				 newData.length);
 	    }
-	}
+	    
+	    /*
+	      int arrayCnt = temp.length;
+	      int cnt;
+	      for (cnt=0; cnt<data.length; cnt++) {
+	      if (data[cnt] == TextConstants.BACKSPACE &&
+	      arrayCnt > 0 &&
+	      (int)this.data[arrayCnt-1] != 8) {
+	      
+	      arrayCnt--;
+	      }
+	      else {
+	      this.data[arrayCnt] = data[cnt];
+	      
+	      arrayCnt++;
+	      }
+	      }
+	      
+	      if (arrayCnt != cnt+temp.length) {
+	      temp = this.data;
+	      this.data = new byte[arrayCnt];
+	      System.arraycopy(temp, 0, this.data, 0, arrayCnt);
+	      }
+	    */
 
-	if (arrayCnt != cnt+temp.length) {
-	    temp = this.data;
-	    this.data = new byte[arrayCnt];
-	    System.arraycopy(temp, 0, this.data, 0, arrayCnt);
+	    dataSetSemaphore.notify();
 	}
-	*/
 
     }
     
@@ -156,7 +163,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 	
 	temp = dataToSend;
 	dataToSend = new byte[0];
-	
+
 	return temp;
     }
     
@@ -180,39 +187,55 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 	while (running) {
 
 	    try {
-		Thread.sleep(bufferTime);
+		synchronized (dataSetSemaphore) {
+		    
+		    if (dataToSend.length == 0) {
+			dataSetSemaphore.wait();
+			
+		    }
+		}
 	    }
 	    catch (InterruptedException ie) {
 	    }
 
-	    synchronized (this) {
-		if (dataWaiting.length > 0) {
-
-		    if (dataToSend.length > 0) {
-			byte[] temp = dataToSend;
-			dataToSend = 
-			    new byte[temp.length + dataWaiting.length];
-			System.arraycopy(temp, 0, dataToSend, 0, temp.length);
-			System.arraycopy(dataWaiting, 0, dataToSend, 
-					 temp.length, dataWaiting.length);
-		    }
-		    else {
-			dataToSend = dataWaiting;
-		    }
-
-		    dataWaiting = new byte[0];
-		    notify();
-		    redGensToSend = redGen;
+	    while (dataWaiting.length > 0 || redGensToSend > 0) {
+		try {
+		    Thread.sleep(bufferTime);
 		}
-		else if (redGensToSend > 0) {
-
-		    notify();
-
-		    if (dataToSend.length == 0) {
-			redGensToSend--;
+		catch (InterruptedException ie) {
+		}
+		
+		synchronized (this) {
+		    if (dataWaiting.length > 0) {
+			
+			if (dataToSend.length > 0) {
+			    byte[] temp = dataToSend;
+			    dataToSend = 
+				new byte[temp.length + dataWaiting.length];
+			    System.arraycopy(temp, 0, dataToSend, 0, 
+					     temp.length);
+			    System.arraycopy(dataWaiting, 0, dataToSend, 
+					     temp.length, dataWaiting.length);
+			}
+			else {
+			    dataToSend = dataWaiting;
+			}
+			
+			dataWaiting = new byte[0];
+			notify();
+			redGensToSend = redGen;
+		    }
+		    else if (redGensToSend > 0) {
+			
+			notify();
+			
+			if (dataToSend.length == 0) {
+			    redGensToSend--;
+			}
 		    }
 		}
-	    }
+	    } 
+
 	}
 
 
@@ -228,6 +251,15 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 	this.redGen = redGen;
     }
     
+
+    /**
+     * Sets the buffer time.
+     *
+     * @param bufferTime The buffer time
+     */
+    public void setBufferTime(int bufferTime) {
+	this.bufferTime = bufferTime;
+    }
 }
 
 
