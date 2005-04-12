@@ -42,7 +42,12 @@ public class RtpTextBuffer {
     private int offset;
     private long timeStamp;
     private long seqNo;
+    private long ssrc;
     
+    public void setSsrc(long ssrc) {
+	this.ssrc = ssrc;
+    }
+
     public void setData(byte[] data) {
 	this.data = data;
     }
@@ -61,6 +66,10 @@ public class RtpTextBuffer {
 
     public void setSequenceNumber(long seqNo) {
 	this.seqNo = seqNo;
+    }
+
+    public long getSsrc() {
+	return ssrc;
     }
 
     public byte[] getData() {
