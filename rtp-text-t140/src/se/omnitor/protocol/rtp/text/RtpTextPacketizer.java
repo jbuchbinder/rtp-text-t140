@@ -163,7 +163,7 @@ public class RtpTextPacketizer {
         byte[] outData = null;
 	byte[] tempOutData = null;
 	int outDataSize = 0;
-	
+
 	//Allocate memory for redundant headers
 	outData = new byte[redGen * TextConstants.REDUNDANT_HEADER_SIZE];
 	
