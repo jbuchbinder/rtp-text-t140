@@ -91,6 +91,8 @@ public class RtpTextDePacketizer {
 
     private Logger logger;
 
+    private long ssrc;
+
 
     /**
      * Initializes the depacketizer and all formats.
@@ -230,6 +232,7 @@ public class RtpTextDePacketizer {
             firstPacket = false;
             lastSequenceNumber = currentSequenceNumber - 1;
             lastOutput = lastSequenceNumber;
+	    ssrc = inputBuffer.getSsrc();
         } 
 
         //Check for sequencenumber wraparound
@@ -251,11 +254,17 @@ public class RtpTextDePacketizer {
                     TextConstants.MAX_SEQUENCE_NUMBER;
             }
         }
+
+	// If wrong SSRC, ignore
+	if (inputBuffer.getSsrc() != ssrc) {
+	    outputBuffer.setData(new byte[0]);
+	    return 1;
+	}
     
         //Packet received in order.
         if (currentSequenceNumber == (lastSequenceNumber+1)) {
         
-            byte[] d = getData(0,data);
+            byte[] d = getData(0, data);
             receivedPackets.put(new Long(currentSequenceNumber),(byte [])d);
             d=(byte[])receivedPackets.get(new Long(currentSequenceNumber));
             lastSequenceNumber = currentSequenceNumber; 
@@ -304,26 +313,36 @@ public class RtpTextDePacketizer {
         //Get packets in order from last output.
         boolean rKey=receivedPackets.containsKey(new Long(lastOutput+1));
         boolean mKey=missingPackets.containsKey(new Long(lastOutput+1));
+	byte[] lastData = null;
         while (rKey) {// || !mKey) {
         
             //Get packets that are ready
             if (rKey) {
                 oldOutData=outData;
                 newData   =(byte[])receivedPackets.get(new Long(lastOutput+1));
-                outData   =new byte[oldOutData.length + newData.length];
-                System.arraycopy(oldOutData,
-                                 0,
-                                 outData,
-                                 0,
-                                 oldOutData.length);
-                System.arraycopy(newData,
-                                 0,
-                                 outData,
-                                 oldOutData.length,
-                                 newData.length);
-                lastOutput++;
-                rKey=receivedPackets.containsKey(new Long(lastOutput+1));
-                mKey=missingPackets.containsKey(new Long(lastOutput+1));
+
+		if (!(lastData == TextConstants.LOSS_CHAR &&
+		      newData == TextConstants.LOSS_CHAR)) {
+		    
+		    outData   =new byte[oldOutData.length + newData.length];
+		    System.arraycopy(oldOutData,
+				     0,
+				     outData,
+				     0,
+				     oldOutData.length);
+		    System.arraycopy(newData,
+				     0,
+				     outData,
+				     oldOutData.length,
+				     newData.length);
+
+		    lastData = newData;
+		}
+
+		lastOutput++;
+		rKey=receivedPackets.containsKey(new Long(lastOutput+1));
+		mKey=missingPackets.containsKey(new Long(lastOutput+1));
+
             }
         }
         
@@ -420,15 +439,18 @@ public class RtpTextDePacketizer {
 
         //Parse the length of the individual blocks.
         for (int i=0;i<redundantGenerations;i++) {
-	    blockLengthByteHigh=data[TextConstants.REDUNDANT_HEADER_SIZE*i+2];
-            blockLengthByteLow=data[TextConstants.REDUNDANT_HEADER_SIZE*i+3];
-            blockLength         = (long)(((blockLengthByteHigh & 
-                                           RTP_DEPACK_BLOCKLEN_UPPER_MASK) << 8)
-                                         | (blockLengthByteLow & 
-                                          RTP_DEPACK_BLOCKLEN_LOWER_MASK));
+	    blockLengthByteHigh = 
+		data[TextConstants.REDUNDANT_HEADER_SIZE*i+2];
+            blockLengthByteLow =
+		data[TextConstants.REDUNDANT_HEADER_SIZE*i+3];
+            blockLength = (long)(((blockLengthByteHigh & 
+				   RTP_DEPACK_BLOCKLEN_UPPER_MASK) << 8)
+				 | (blockLengthByteLow & 
+				    RTP_DEPACK_BLOCKLEN_LOWER_MASK));
             blockLengths[i] = blockLength; 
+	    
         }
-    
+
         //Each generation takes 4 bytes header space + end header 1 byte.
         if (redundantGenerations>0) {
             startLength = redundantGenerations* 
@@ -458,6 +480,7 @@ public class RtpTextDePacketizer {
 	    for (int i=0;i<blockLengths.length;i++) {
 		primaryStart+=blockLengths[i];
 	    }
+
             extractedData = new byte[(int)(data.length-primaryStart)];
             System.arraycopy(data,
                              (int)primaryStart,
@@ -548,9 +571,25 @@ public class RtpTextDePacketizer {
     public void lostPacket(long sequenceNumber) {
 	missingPackets.remove(new Long(sequenceNumber));
 	if (!receivedPackets.containsKey(new Long(sequenceNumber))) {
-	    System.out.println("Packet "+sequenceNumber+" was lost.");
-	    receivedPackets.put(new Long(sequenceNumber),
-				TextConstants.LOSS_CHAR);
+	    byte[] dataToAdd = TextConstants.LOSS_CHAR;
+
+	    if (receivedPackets.containsKey(new Long(sequenceNumber+1)) &&
+		(receivedPackets.get(new Long(sequenceNumber+1)) ==
+		 TextConstants.LOSS_CHAR)) {
+
+		dataToAdd = new byte[0];
+
+	    }
+	    else if (receivedPackets.containsKey(new Long(sequenceNumber-1)) &&
+		     (receivedPackets.get(new Long(sequenceNumber-1)) ==
+		      TextConstants.LOSS_CHAR)) {
+
+		dataToAdd = new byte[0];
+
+	    }
+
+	    receivedPackets.put(new Long(sequenceNumber), dataToAdd);
+
 	}
     }
 
