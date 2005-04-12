@@ -79,8 +79,9 @@ public abstract class TextConstants {
      * Zero width no break space, transmitted at the beginning of a T.140 
      * session to ensure that the byte order is correct.
      */
-    public static final byte[] ZERO_WIDTH_NO_BREAK_SPACE = { (byte) 0xFE, 
-                                                             (byte) 0xFF };
+    public static final byte[] ZERO_WIDTH_NO_BREAK_SPACE = { (byte) 0xEF, 
+                                                             (byte) 0xBB,
+							     (byte) 0xBF };
     /**
      * Zero width no break space in character form.
      */
