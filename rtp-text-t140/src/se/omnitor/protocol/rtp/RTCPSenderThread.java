@@ -78,6 +78,8 @@ public class RTCPSenderThread extends Thread
     // IP: Added this to get rid of all static types
     private Session rtpSession;
     
+    private SymmetricMulticastSocket socket;
+    private boolean symmetric;
 
     /**
      * Initialies the class. Takes care of the variables.
@@ -91,12 +93,28 @@ public class RTCPSenderThread extends Thread
 			      int rtcpSendFromPort, int rtcpGroupPort, 
 			      Session rtpSession)
     {
-        // TODO: Perform sanity check on group address and port number - WA
+        // TODO: Perform sanity check on group address and port number 
         m_InetAddress = multicastGroupIPAddress;
         m_MulticastRTCPPort = rtcpGroupPort;
         m_SendFromPort = rtcpSendFromPort;
         // IP: Added following
         this.rtpSession = rtpSession;
+	symmetric=false;
+    }
+
+    public RTCPSenderThread ( InetAddress multicastGroupIPAddress, 
+			      int rtcpSendFromPort, int rtcpGroupPort, 
+			      Session rtpSession,
+			      SymmetricMulticastSocket socket)
+    {
+        // TODO: Perform sanity check on group address and port number 
+        m_InetAddress = multicastGroupIPAddress;
+        m_MulticastRTCPPort = rtcpGroupPort;
+        m_SendFromPort = rtcpSendFromPort;
+        // IP: Added following
+        this.rtpSession = rtpSession;
+	m_RTCPSenderSocket=socket;
+	symmetric=true;
     }
     
     /**
@@ -133,22 +151,24 @@ public class RTCPSenderThread extends Thread
 			       m_SendFromPort );
 	
         // Create a new socket and join group
-	try
-	    {
-		// IP: Changed
-		// m_RTCPSenderSocket = 
-		// new MulticastSocket ( m_SendFromPort );
-		m_RTCPSenderSocket = new DatagramSocket ( m_SendFromPort );
-		
-	    }
-	/*catch ( UnknownHostException e )
-	  {
-	  rtpSession.outprintln("Unknown Host Exception");
-	  }*/
-        catch ( java.io.IOException e )
-	    {
-		rtpSession.outprintln ("RTCPSenderThread: IOException");
-	    }
+	if(!symmetric) { 
+	    try
+		{
+		    // IP: Changed
+		    // m_RTCPSenderSocket = 
+		    // new MulticastSocket ( m_SendFromPort );
+		    m_RTCPSenderSocket = new DatagramSocket ( m_SendFromPort );
+		    
+		}
+	    /*catch ( UnknownHostException e )
+	      {
+	      rtpSession.outprintln("Unknown Host Exception");
+	      }*/
+	    catch ( java.io.IOException e )
+		{
+		    rtpSession.outprintln ("RTCPSenderThread: IOException");
+		}
+	}
 	
 	
         // flag terminates the endless while loop

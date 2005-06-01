@@ -61,6 +61,8 @@ public class RTCPReceiverThread implements Runnable {
     private StateThread thisThread;
     
     private DatagramSocket socket;
+
+    private boolean symmetric;
     
     /**
      * Constructor for the class. Takes in a TCP/IP Address and a port number
@@ -77,10 +79,21 @@ public class RTCPReceiverThread implements Runnable {
 	m_InetAddress = multicastGroupIPAddress;
 	m_port = rtcpGroupPort;
 	this.rtpSession = rtpSession;
-	
+	symmetric=false;
 	thisThread = new StateThread(this);
     }
     
+    public RTCPReceiverThread(InetAddress multicastGroupIPAddress, 
+			      int rtcpGroupPort, Session rtpSession,
+			      SymmetricMulticastSocket socket) {
+	m_InetAddress = multicastGroupIPAddress;
+	m_port = rtcpGroupPort;
+	this.rtpSession = rtpSession;
+	this.socket=socket;
+	symmetric=true;
+	thisThread = new StateThread(this);
+    }
+
     /**
      * Starts the receiver thread
      *
@@ -155,7 +168,9 @@ public class RTCPReceiverThread implements Runnable {
 	    // IP: Changed
 	    //MulticastSocket socket = new MulticastSocket ( m_port );
 	    //socket.joinGroup ( m_InetAddress );
-	    socket = new DatagramSocket(m_port);
+	    if(!symmetric) {
+		socket = new DatagramSocket(m_port);
+	    }
 	    
 	    byte[] packet = new byte[1024];
 	    DatagramPacket header = 
@@ -171,7 +186,14 @@ public class RTCPReceiverThread implements Runnable {
 		    (new Long ((new Date()).getTime()).toString() + 
 		     "   " + "RTCP" + "  ");
 		
-		socket.receive(header);
+		try {
+		    socket.receive(header);
+		}catch (java.net.SocketTimeoutException ste) {
+		    //It's ok to timeout
+		}catch (Exception e) {
+		    System.err.println("RTCPReceiver recieve error:"+e);
+		}
+		
 		rtpSession.outprint("Len " + header.getLength() +  "  " +
 				    "from " + header.getAddress()+ ":" +
 				    header.getPort() + "\n");
@@ -973,9 +995,9 @@ public class RTCPReceiverThread implements Runnable {
 	    
 	    socket.close();
 	}
-	catch ( UnknownHostException e ) {
-	    System.err.println (e);
-	}
+	//catch ( UnknownHostException e ) {
+	//    System.err.println (e);
+	//}
 	catch ( java.io.IOException e ) {
 	    System.err.println (e);
 	}
