@@ -46,6 +46,10 @@ public class RTCPThreadHandler extends java.lang.Object
     Session rtpSession;
     InetAddress multicastGroupIPAddress;
     
+    private SymmetricMulticastSocket socket;
+    private boolean symmetric;
+    private int localPort;
+    
     /**
      * Constructor creates the sender and receiver
      * threads. (Does not start the threads)
@@ -60,7 +64,28 @@ public class RTCPThreadHandler extends java.lang.Object
     {
         this.multicastGroupIPAddress = multicastGroupIPAddress;
         this.rtpSession = rtpSession;
+	symmetric=false;
+	localPort=0;
 	
+    }
+    
+    public RTCPThreadHandler (  InetAddress multicastGroupIPAddress,
+				int localPort,
+                                Session rtpSession,
+				boolean symmetric
+				)
+    {
+	System.out.println("***********************RTCPThreadHandler created");
+        this.multicastGroupIPAddress = multicastGroupIPAddress;
+	this.localPort = localPort;
+        this.rtpSession = rtpSession;
+	this.symmetric=symmetric;
+	
+	try {
+	    socket = new SymmetricMulticastSocket(localPort);
+	} catch (Exception e) {
+	    System.err.println("RTPCHandler, error creating socket. "+e);
+	}
     }
     
     /**
@@ -73,9 +98,21 @@ public class RTCPThreadHandler extends java.lang.Object
 					       int rtcpGroupPort)
     {
         // create an rtcpSender thread
-        rtcpSenderThread = 
-	    new RTCPSenderThread ( multicastGroupIPAddress, rtcpSendFromPort, 
-				   rtcpGroupPort, rtpSession );
+	if(symmetric) {
+	    rtcpSenderThread = 
+		new RTCPSenderThread ( multicastGroupIPAddress, 
+				       rtcpSendFromPort, 
+				       rtcpGroupPort, 
+				       rtpSession,
+				       socket);
+	} else {
+	    rtcpSenderThread = 
+		new RTCPSenderThread ( multicastGroupIPAddress, 
+				       rtcpSendFromPort, 
+				       rtcpGroupPort, 
+				       rtpSession );
+	}
+	
         // Start thread
         rtcpSenderThread.start();
     }
@@ -98,9 +135,19 @@ public class RTCPThreadHandler extends java.lang.Object
 	(int rtcpGroupPort)
     {
         // create an rtcpReceiver thread
-        rtcpReceiverThread = 
-	    new RTCPReceiverThread ( multicastGroupIPAddress, rtcpGroupPort, 
-				     rtpSession );
+	if(symmetric) {
+	    rtcpReceiverThread = 
+		new RTCPReceiverThread ( multicastGroupIPAddress,
+					 rtcpGroupPort, 
+					 rtpSession,
+					 socket);
+	} else {
+	    rtcpReceiverThread = 
+		new RTCPReceiverThread ( multicastGroupIPAddress,
+					 rtcpGroupPort, 
+					 rtpSession );
+	}
+
         // Start thread
         rtcpReceiverThread.start();
     }
