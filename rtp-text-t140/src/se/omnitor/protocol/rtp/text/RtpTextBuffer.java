@@ -43,6 +43,7 @@ public class RtpTextBuffer {
     private long timeStamp;
     private long seqNo;
     private long ssrc;
+    private byte markerByte;
     
     public void setSsrc(long ssrc) {
 	this.ssrc = ssrc;
@@ -68,6 +69,14 @@ public class RtpTextBuffer {
 	this.seqNo = seqNo;
     }
 
+    public void setMarker(boolean marker) {
+	if(marker) {
+	    markerByte=0x1;
+	    return;
+	}
+	markerByte=0;
+    }
+
     public long getSsrc() {
 	return ssrc;
     }
@@ -91,4 +100,23 @@ public class RtpTextBuffer {
     public long getSequenceNumber() {
 	return seqNo;
     }
+
+    public boolean getMarker() {
+	if(markerByte==1) {
+	    return true;
+	}
+	return false;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+

@@ -32,6 +32,7 @@ public class RTPPacket {
     private long timeStamp;
     private long ssrc;
     private byte[] data;
+    private byte markerByte;
 
     /**
      * Gets the CSRC count. <br>
@@ -141,4 +142,30 @@ public class RTPPacket {
     public void setPayloadData(byte[] payloadData) {
 	this.data = payloadData;
     }
+
+    /**
+     * Sets the marker bit for this packet.
+     *
+     * @param marker true = marker bit set
+     */
+    public void setMarker(boolean marker) {
+	if(marker) {
+	    markerByte=0x1;
+	    return;
+	}
+	markerByte=0;
+    }
+
+    /**
+     * Gets the marker bit for this packet.
+     *
+     * @return 1 if marker is set, 0 otherwise.
+     */
+    public byte getMarker() {
+	return markerByte;
+    }
+
 }
+
+
+
