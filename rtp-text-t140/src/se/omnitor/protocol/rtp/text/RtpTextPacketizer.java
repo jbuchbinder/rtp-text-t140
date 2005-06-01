@@ -157,7 +157,7 @@ public class RtpTextPacketizer {
 	int i=0; //Packet index
 	
 	int inLength = inBuffer.getLength();
-	theTimeStamp = today.getTime();
+	theTimeStamp = java.lang.System.currentTimeMillis();//today.getTime();
         byte[] inData = inBuffer.getData();
 	int inDataLength = inBuffer.getLength();
         byte[] outData = null;
