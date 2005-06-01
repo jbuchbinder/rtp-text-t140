@@ -84,7 +84,8 @@ public class RtpTextTransmitter implements Runnable {
      * @param dataBuffer The buffer with incoming data. This has to be started
      * before transmission begins.
      */
-    public RtpTextTransmitter(boolean startRtpTransmit, 
+    public RtpTextTransmitter(Session rtpSession,
+			      boolean startRtpTransmit, 
 			      String ipAddress,
 			      int localPort, 
 			      int remotePort, 
@@ -98,7 +99,7 @@ public class RtpTextTransmitter implements Runnable {
 
         logger.finest("Creating RTP text transmitter");
 
-        this.rtpSession = new Session(ipAddress, 64000);
+        this.rtpSession = rtpSession;// new Session(ipAddress, 64000);
 
         this.ipAddress = ipAddress;
         this.localPort = localPort;
@@ -158,10 +159,10 @@ public class RtpTextTransmitter implements Runnable {
 	// Changed by Andreas Piirimets 2004-02-16
 	// The transmission should be able to handle a localPort which is
 	// different to the remote port.
-	// rtpSession.openRTPTransmitSocket(remotePort);
-	rtpSession.openRTPTransmitSocket(localPort, remotePort);
+	//rtpSession.openRTPTransmitSocket(remotePort);
+	//rtpSession.openRTPTransmitSocket(localPort, remotePort);
 
-	rtpSession.createAndStartRTCPSenderThread(localPort+1, remotePort+1);
+	//rtpSession.createAndStartRTCPSenderThread(localPort+1, remotePort+1);
 
 	if (startRtpTransmit) {
 	    start();
@@ -199,13 +200,20 @@ public class RtpTextTransmitter implements Runnable {
 	RtpTextBuffer inBuffer;
 	RtpTextBuffer outBuffer;
 
+	long lastSentTime = 0;
+	long timeNow = 0;
+	int bufferTime;
+
         logger.finest("Beginning of text transmit thread.");
 
 	//DEBUG
 	System.out.println("Use redudancy: " + redFlagOutgoing);
 
+
 	dataBuffer.start();
 	dataBuffer.setData(TextConstants.ZERO_WIDTH_NO_BREAK_SPACE);
+
+	bufferTime=dataBuffer.getBufferTime();
 
         while (thisThread.checkState() != StateThread.STOP) {
 
@@ -248,7 +256,22 @@ public class RtpTextTransmitter implements Runnable {
 		    }
 
 		    outBuffer = new RtpTextBuffer();
+		    
+		    
 		    textPacketizer.encode(inBuffer, outBuffer);
+		    timeNow=outBuffer.getTimeStamp();
+
+		    //EZ: Mark packets after idle period of bufferTime.
+		    //    Allow an additional 100 ms for processing.
+		    //    Also mark first packet.
+		    //    Ignores time wraparounds.
+		    if((timeNow-lastSentTime)>(bufferTime+100)) {
+			outBuffer.setMarker(true);
+		    }
+		    else {
+			outBuffer.setMarker(false);
+		    }
+		    lastSentTime=timeNow;
 		    
 		    // Temp: adding zero at end. This will be removed.
 		    byte[] dataToSend = outBuffer.getData();
@@ -256,16 +279,15 @@ public class RtpTextTransmitter implements Runnable {
 		    System.arraycopy(dataToSend, 0, newData, 0, 
 				     dataToSend.length);
 		    newData[dataToSend.length] = 0;
-		    outBuffer.setData(newData)
-;
+		    outBuffer.setData(newData);
 
 		    outputPacket.setPayloadData(outBuffer.getData());
 		    outputPacket.setTimeStamp(outBuffer.getTimeStamp());
 		    outputPacket.setSequenceNumber(outBuffer.
 						   getSequenceNumber());
+		    outputPacket.setMarker(outBuffer.getMarker());
 		    
 		    //DEBUG
-		    System.out.println("Sending packet data: " + new String(outputPacket.getPayloadData()));
 
 		    rtpSession.sendRTPPacket(outputPacket); 
 		}

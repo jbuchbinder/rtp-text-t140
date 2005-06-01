@@ -27,6 +27,7 @@ import se.omnitor.protocol.rtp.packets.RTP_actionListener;
 import se.omnitor.protocol.rtp.packets.RTPPacket;
 
 import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.Enumeration;
@@ -338,11 +339,12 @@ public class Session extends java.lang.Object
      * Multicast group IP address.
      * @param  bandwidth           Bandwidth available to the session.
      */
-    public Session (String multicastGroupIPAddress, double bandwidth)
+    public Session (String multicastGroupIPAddress, double bandwidth, int localPort)
 		    
     {
 	this.bandwidth = bandwidth;
 
+	System.out.println("Creating RTP session");
 	cname = "";
 	email = "";
 	
@@ -351,11 +353,11 @@ public class Session extends java.lang.Object
 	m_InetAddress = getInetAddress ( multicastGroupIPAddress );
 	
 	// Create a new RTP Handler thread (but do not start it yet)
-	m_RTPHandler = new RTPThreadHandler ( m_InetAddress, this);
+	m_RTPHandler = new RTPThreadHandler ( m_InetAddress, localPort, this, true);
 	
 	// Create a new RTCP Handler thread (but do not start it yet)
 	//  Set the sendto and recvfrom ports
-	m_RTCPHandler = new RTCPThreadHandler ( m_InetAddress, this );
+	m_RTCPHandler = new RTCPThreadHandler ( m_InetAddress, localPort+1, this, true);
 	
 	// Initilize session level variables
 	initialize();
@@ -1065,14 +1067,14 @@ public class Session extends java.lang.Object
      *
      * @see Session#startRTPThread
      */
-    public void start (int rtpLocalPort, int rtcpLocalPort, int rtpRemotePort, 
+    public void start (MulticastSocket socket,int rtpLocalPort, int rtcpLocalPort, int rtpRemotePort, 
 		       int rtcpRemotePort)
     {
 	createAndStartRTCPSenderThread(rtcpLocalPort, rtcpRemotePort);
 	createAndStartRTCPReceiverThread(rtcpLocalPort);
 	openRTPReceiveSocket(rtpLocalPort);
 	
-	openRTPTransmitSocket(rtpRemotePort);
+	openRTPTransmitSocket(rtpLocalPort,rtpRemotePort);
 	startRTPThread();
     }
     

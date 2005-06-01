@@ -19,6 +19,7 @@
 package se.omnitor.protocol.rtp;
 
 import se.omnitor.protocol.rtp.packets.RTPPacket;
+//import se.omnitor.protocol.rtp.RTPSymmetricSocket;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -128,6 +129,12 @@ public class RTPThreadHandler implements Runnable
 
     private boolean packetLossEnabled = false; //EZ: Enables packet loss
     private int lossRatio = 50;                 //EZ: The packet loss ratio
+
+    private SymmetricMulticastSocket socket;
+    private boolean symmetric;
+    private boolean rtpSymmetricSocketStarted;
+
+
     /**
      * Constructor for the class. Takes in a TCP/IP Address and a port 
      * number. It initializes a new multicast socket according to the
@@ -136,11 +143,60 @@ public class RTPThreadHandler implements Runnable
      * @param multicastAddress Dotted representation of the Multicast address.
      * @param rtpSession The Session to use
      */
-    public RTPThreadHandler(InetAddress multicastAddress, Session rtpSession) {
+
+    public RTPThreadHandler(InetAddress multicastAddress, 
+			    Session rtpSession) {
+	init(multicastAddress, 0, rtpSession, false);	
+    }
+    
+
+    /**
+     * Constructor for a symmetric session, more data is needed.
+     *
+     * @param multicastAddress Dotted representation of the Multicast address.
+     * @param localPort The port to send and receive from 
+     * @param rtpSession The Session to use
+     * @param symmetric true indicates this session is indeed symmetric.
+     */
+    public RTPThreadHandler(InetAddress multicastAddress, 
+			    int localPort,
+			    Session rtpSession,
+			    boolean symmetric) {
+	init(multicastAddress, localPort, rtpSession, symmetric);
+
+    }
+
+    /**
+     * Help function to handle both constructors.
+     *
+     * @param multicastAddress Dotted representation of the Multicast address.
+     * @param localPort The port to send and receive from, 0 if not symmetric
+     * @param rtpSession The Session to use
+     * @param symmetric true indicates if this session is symmetric
+     */
+    private void init(InetAddress multicastAddress,
+		      int localPort,
+		      Session rtpSession,
+		      boolean symmetric) {
+	this.symmetric = symmetric;
+	m_mcastPort = localPort;
+	m_sendPort=0;
+	if(symmetric) {
+	    m_sendPort = m_mcastPort;	
+	    try {
+		socket = new SymmetricMulticastSocket(localPort);
+	    } catch (Exception e) {
+		System.err.println("RTPThreadHandler: Fialed to create symmetric socket.");
+	    }
+	    m_sockSend    = socket;
+	    m_sockReceive = socket;
+	}
+
+
 	m_InetAddress = multicastAddress;
 	// IP: Init
-	m_mcastPort = 0;
-	m_sendPort = 0;
+	//m_mcastPort = 0;
+	//m_sendPort = 0;
         
 	Random rnd = new Random();  // Use time as default seed
         
@@ -158,6 +214,7 @@ public class RTPThreadHandler implements Runnable
         
         // IP: Added following line
         thisThread = new StateThread(this);
+	rtpSymmetricSocketStarted=false;
     }
     
     /**
@@ -166,17 +223,14 @@ public class RTPThreadHandler implements Runnable
      * @param multicastPort The port number for multicast reception
      */
     public void openReceiveSocket(int multicastPort) {
-        if (isReceiveSocketOpened())
+        if (!symmetric && isReceiveSocketOpened())
             return ;
-        
-        m_mcastPort = multicastPort;
-        
-        // If send and receive uses the same port do NOT open a new socket
-        if (isTransmitSocketOpened() && (m_sendPort == m_mcastPort)) {
-            m_sockReceive = m_sockSend;
-        }
-	else {
-            try {
+
+	if(!symmetric) {    
+	    m_mcastPort = multicastPort;
+	    
+	    try {
+		//m_sockReceive = new DatagramSocket( m_mcastPort );
                 m_sockReceive = new MulticastSocket( m_mcastPort );
                 //s.setTimeToLive(128);
             } catch (IOException e) {
@@ -185,9 +239,10 @@ public class RTPThreadHandler implements Runnable
 			      e.getMessage() + "\n" + 
 			      e.getStackTrace().toString());
             }
-        }
+	}
     }
-    
+
+  
     /**
      * Indicates whether the reception socket is opened.
      *
@@ -229,35 +284,39 @@ public class RTPThreadHandler implements Runnable
      */
     public void openTransmitSocket(int localPort, int remotePort)
     {
-        if (isTransmitSocketOpened())
+        if (!symmetric && isTransmitSocketOpened())
             return;
         
-        m_sendPort = remotePort;
-        
-        // If send and receive uses the same port do NOT open a new socket
-        if (isReceiveSocketOpened() && (m_sendPort == m_mcastPort)) {
-            m_sockSend = m_sockReceive;
-        }
-	else {
-            //Initialize a Multicast Sender Port to send RTP Packets
-            rtpSession.outprintln ( "Openning local port " + 
+
+
+	if (!symmetric) {	
+	    m_sendPort = remotePort;
+	    //Initialize a Multicast Sender Port to send RTP Packets
+            rtpSession.outprintln ( "Opening local port " + 
 				    localPort + " for sending RTP..");
 
-            try
-            {
-                // m_sockSend = new MulticastSocket ( m_sendPort );
-                m_sockSend = new DatagramSocket( localPort );
-            }
+            try {
+		m_sockSend = new MulticastSocket ( localPort );//m_sendPort );
+	        java.lang.Thread.sleep(100);
+                //m_sockSend = new DatagramSocket( localPort );
+            } 
 	    catch ( SocketException e) {
+		System.err.println("Recv socket status: "+isReceiveSocketOpened());
+		System.err.println("m_sendPort: "+m_sendPort+" m_mcastPort: "+m_mcastPort+" localPort: "+localPort);
 		System.err.println ( "RTPThreadHandler: " + e );
 	    }
 	    catch ( java.io.IOException e ) {
-		System.err.println (e);
+		System.err.println("Recv socket status: "+isReceiveSocketOpened());
+		System.err.println("m_senPort: "+m_sendPort+" m_mcastPort: "+m_mcastPort+" localPort: "+localPort);
+	        System.err.println ("IO:"+e);
 	    }
-            rtpSession.outprintln ( "Successfully openned local port " + 
+	    catch ( Exception e) {
+		System.err.println("RTPThreadHandler openTransmitSocket: "+e);
+	    }
+            rtpSession.outprintln ( "Successfully opened local port " + 
 				    localPort );
 
-        }
+	}
     }
     
     /**
@@ -302,8 +361,8 @@ public class RTPThreadHandler implements Runnable
         
         if (m_sockSend.isClosed())
             return 0;
-        
-        m_PT[0]    = (byte) ((0x0 << 8) | ( rtpSession.getSendPayloadType() ));
+	 
+        m_PT[0]    = (byte) ((packet.getMarker() << 7) | ( rtpSession.getSendPayloadType() ));
         // +-+-+-+-+-+-+-+-+
         // |M|     PT      |
         // +-+-+-+-+-+-+-+-+
@@ -315,8 +374,8 @@ public class RTPThreadHandler implements Runnable
             timestamp = rtpSession.currentTime() + rtpSession.RANDOM_OFFSET;
         
         byte[] ts = new byte[4];         // timestamp is 4 bytes
-        //ts = PacketUtils.LongToBytes( timestamp, 4 );
-        ts = PacketUtils.longToBytes(0, 4 );
+        ts = PacketUtils.longToBytes( timestamp, 4 );
+        //ts = PacketUtils.longToBytes(0, 4 );
         
         byte[] seq = new byte[2];       // sequence is 2 bytes
         if (packet.getSequenceNumber() != 0)
@@ -377,7 +436,11 @@ public class RTPThreadHandler implements Runnable
 	    else
 	    */
 
-	    m_sockSend.send(pkt);
+	    try {
+		m_sockSend.send(pkt);
+	    } catch (Exception e) {
+		System.err.println("RTPThreadHandle, excpetion sending: "+e);
+	    }
 	                
             //Update own status to Active Sender
             Source s1 = rtpSession.getMySource();
@@ -388,10 +451,13 @@ public class RTPThreadHandler implements Runnable
             rtpSession.octetCount += packet.getPayloadData().length;
             
         }
-	catch ( java.io.IOException e ) {
-            System.err.println(e);
+	/*catch ( java.io.IOException e ) {
+            System.err.println("RTPThreadHandler sendPacket: "+e);
             System.exit(1);
-        }
+	    }*/
+	catch (Exception e) {
+	     System.err.println("RTPThreadHandler sendPacket2: "+e);
+	}
         
         return 1;
         
@@ -435,7 +501,7 @@ public class RTPThreadHandler implements Runnable
         
         receivePayloadType = rtpSession.getReceivePayloadType();
         
-        try {
+        
             
             // IP: Moved following line own method instead
             // MulticastSocket m_sockReceive = 
@@ -444,7 +510,10 @@ public class RTPThreadHandler implements Runnable
             //m_sockReceive.joinGroup ( m_InetAddress );
             
             while (thisThread.checkState() != StateThread.STOP) {
+
+		try {
                 m_sockReceive.receive( packet );
+
 
                 if ( validateRTPPacketHeader( packet.getData() ) ) {
                     long ssrc = 0;
@@ -522,14 +591,19 @@ public class RTPThreadHandler implements Runnable
                     rtpSource.noOfRTPPacketsRcvd++;
                 }
                 else {
-                    System.err.println
-			("RTP Receiver: Bad RTP Packet received");
-                    System.err.println
-			("From : " + packet.getAddress() + "/" + 
-			 packet.getPort() + "\n" + "Length : " + 
-			 packet.getLength()
-                    );
+                    //System.err.println
+		    //	("RTP Receiver: Bad RTP Packet received");
+                    //System.err.println
+		    //("From : " + packet.getAddress() + "/" + 
+		    // packet.getPort() + "\n" + "Length : " + 
+		    // packet.getLength()
+                    //);
                 }
+		}catch (java.net.SocketTimeoutException ste) {
+		    //It's ok to timeout
+		}catch (Exception e) {
+		    System.err.println("RTPThreadHandler: starRTPReceive "+e);
+		}
             }
 
             // IP: Added line
@@ -537,13 +611,7 @@ public class RTPThreadHandler implements Runnable
             
             //m_sockReceive.leaveGroup( m_InetAddress );
             //m_sockReceive.close();
-        }
-        catch ( SocketException se) {
-            System.err.println("RTPThreadHandler: " +  se );
-        }
-	catch ( java.io.IOException e ) {
-            rtpSession.outprintln(" IO exception" );
-        }
+
     }
     
     // IP: Added method
