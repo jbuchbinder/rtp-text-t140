@@ -80,7 +80,8 @@ public class RtpTextReceiver implements Runnable,
      * @param redPayloadType The RTP payload number for RED, if used.
      * @param dataBuffer The buffer to write incoming data to
      */
-    public RtpTextReceiver(String ipAddress,
+    public RtpTextReceiver(Session rtpSession,
+			   String ipAddress,
                            int localPort, 
 			   boolean redFlagIncoming, 
 			   int t140PayloadType, 
@@ -89,7 +90,7 @@ public class RtpTextReceiver implements Runnable,
 
         logger.finest("ENTRY");
 
-        this.rtpSession = new Session(ipAddress, 64000);
+        this.rtpSession = rtpSession;//new Session(ipAddress, 64000);
 
         this.ipAddress = ipAddress;
         this.localPort = localPort;
@@ -157,9 +158,9 @@ public class RtpTextReceiver implements Runnable,
     {
 	logger.finest("ENTRY");
 
-        rtpSession.openRTPReceiveSocket(localPort);
-        rtpSession.startRTPThread();
-        rtpSession.createAndStartRTCPReceiverThread(localPort+1);
+        //rtpSession.openRTPReceiveSocket(localPort);
+        //rtpSession.startRTPThread();
+        //rtpSession.createAndStartRTCPReceiverThread(localPort+1);
 
         rtpSession.addRTP_actionListener(this);
         rtpSession.addRTCP_actionListener(this);
