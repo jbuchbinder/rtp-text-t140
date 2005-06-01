@@ -260,6 +260,15 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
     public void setBufferTime(int bufferTime) {
 	this.bufferTime = bufferTime;
     }
+
+    /**
+     * Gets the buffer time.
+     *
+     * @return The buffer time.
+     */
+    public int getBufferTime() {
+	return bufferTime;
+    }
 }
 
 
