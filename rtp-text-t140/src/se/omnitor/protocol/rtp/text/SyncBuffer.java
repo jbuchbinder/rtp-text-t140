@@ -33,7 +33,7 @@ package se.omnitor.protocol.rtp.text;
 import se.omnitor.util.FifoBuffer;
 
 /**
- * RFC2793bis states that text should be buffered 300 ms before sending. If 
+ * RFC 4103 states that text should be buffered 300 ms before sending. If 
  * no text has been written in 300 ms and we have redundant data that should
  * be sent, empty data should be appended. <br>
  * <br>
@@ -63,7 +63,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
      * @param redGen Number of redundant generations. A value of zero turns
      * off redundancy.
      * @param bufferTime The number of milliseconds to buffer data. According
-     * to RFC2793bis, this SHOULD be 300 ms.
+     * to RFC 4103, this SHOULD be 300 ms.
      */
     public SyncBuffer(int redGen, int bufferTime) {
 	this.redGen = redGen;
@@ -179,7 +179,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
     /**
      * Handles buffer times.
      *
-     * @todo CPS handling - According to RFC2793bis, we must respect remote's
+     * @todo CPS handling - According to RFC 4103, we must respect remote's
      * CPS demand.
      */
     public void run() {

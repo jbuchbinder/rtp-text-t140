@@ -84,7 +84,7 @@ import se.omnitor.media.content.text.t140.TextPlayer;
 import se.omnitor.util.FifoBuffer;
 
 /**
- * Receives RTP streams that contains text according to RFC2793 using JMF.
+ * Receives RTP streams that contains text according to RFC 4103 using JMF.
  * 
  * @author Erik Zetterstrom, Omnitor AB
  * @author Andreas Piirimets, Omnitor AB

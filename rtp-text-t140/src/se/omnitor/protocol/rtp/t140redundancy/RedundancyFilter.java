@@ -69,7 +69,7 @@ public class RedundancyFilter {
     /**
      * Creates the reundancy filter.
      * 
-     * @param redFlagOutgoing True if RFC2793 redundancy 
+     * @param redFlagOutgoing True if using RFC 4103 redundancy 
      *                        is supported in this endpoint.
      * @param redundancyLevels Number of redundantGenerations to use. 
      */
@@ -291,8 +291,8 @@ public class RedundancyFilter {
 		    nbrPacketsLost += 100; 
 
 		//EZ: Added check to see if sending endpoint supports
-		//    RFC2793 redundancy.
-		//    If RFC2793 is supported T.140 redundancy
+		//    RFC 4103 redundancy.
+		//    If RFC 4103 is supported T.140 redundancy
 		//    should be ignored. 
 		if ( nbrPacketsLost > 0 && (rfcSupport != 1)) {
 		    
@@ -433,7 +433,7 @@ public class RedundancyFilter {
 	header[1]=sosBytes[1];
 	header[2]=sosBytes[2];
 
-	//EZ 041114: Added rfc2793 redundancy support indicator. 
+	//EZ 041114: Added rfc4103 redundancy support indicator. 
 	if (redFlagOutgoing) 
 	    header[3]=(byte)('1');
 	else

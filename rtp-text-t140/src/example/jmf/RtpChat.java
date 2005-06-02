@@ -44,7 +44,7 @@ import se.omnitor.util.FifoBuffer;
  * An example of how to use the RTP text/t140 library together with JMF. <br>
  * <br>
  * This is a RTP chat, where two users can connect to each other and chat
- * through RFC2793. <br>
+ * through RFC 4103. <br>
  *
  * @author Andreas Piirimets, Omnitor AB
  */

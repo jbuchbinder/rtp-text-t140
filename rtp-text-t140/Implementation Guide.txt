@@ -130,7 +130,7 @@ When locally written characters are to be sent over the network, they should
 first pass the SyncBuffer. This is a FIFO buffer, which is suitable to use
 in between the GUI and the RTP parts.
 
-Accoring to RFC2793, data should be buffered in 300 ms before sending. If
+Accoring to RFC 4103, data should be buffered in 300 ms before sending. If
 redundancy is used and no data has been written for 300 ms, redundant packets
 should be sent with empty data. All this is handled by the SyncBuffer.
 

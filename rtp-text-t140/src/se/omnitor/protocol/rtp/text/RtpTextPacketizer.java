@@ -42,7 +42,7 @@ import java.util.Vector;
 /**
  * Constructs an RTP-Text packet. <br>
  * <br>
- * According to "RFC2793 - RTP Payload for text conversation" 
+ * According to "RFC 4103 - RTP Payload for text conversation" 
  * transmitted text must be in UTF-8 form. <br>
  *
  * @author Erik Zetterstrom, Omnitor AB
@@ -142,7 +142,7 @@ public class RtpTextPacketizer {
     
     
     /**
-     * Encodes an RTP packet according to RFC2793.
+     * Encodes an RTP packet according to RFC 4103.
      *
      * @param inBuffer The data to be packetized.
      * @param outBuffer The packet
