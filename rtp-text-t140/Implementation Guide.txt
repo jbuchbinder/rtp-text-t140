@@ -44,7 +44,7 @@ This document describes how to use RTP text/t140 library.
 ---------------------------------
 
 RTP text/t140 library is a software package that can be used in a soft phone
-or any other application that wants to use the RTP payload type for text conversation specification (RFC2793).
+or any other application that wants to use the RTP payload type for text conversation specification (RFC 4103, former RFC 2793).
 
 RTP text/t140 library consists of these parts:
 
@@ -56,7 +56,7 @@ RTP text/t140 library consists of these parts:
 Making and parsing RTP packets, including redundancy handling, are 
 managed in the packetizer/depacketizer.
  
-RFC2793 recommends text buffering and re-sending in silent periods (when using
+RFC 4103 recommends text buffering and re-sending in silent periods (when using
 redundancy). This is handeled in the SyncBuffer.
 
 
@@ -94,7 +94,7 @@ se.omnitor.util                     - A FIFO buffer
 4.1  RtpTextPacketizer
 
 In se.omnitor.protocol.rtp.text, a RtpTextPacketizer is found. This class
-handles encoding of RTP packets according to RFC2793.
+handles encoding of RTP packets according to RFC 4103.
 
 This class also holds information about redundant generations.
 
@@ -105,7 +105,7 @@ for every packet that should be sent.
 4.2  RtpTextDePacketizer
 
 In se.omnitor.protocol.rtp.text, a RtpTextDePacketizer is found. This class
-handles decoding of incoming RTP packets according to RFC2793.
+handles decoding of incoming RTP packets according to RFC 4103.
 
 This class saves redundant data and restores it if packets are lost.
 
