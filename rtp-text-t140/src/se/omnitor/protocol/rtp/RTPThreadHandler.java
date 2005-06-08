@@ -284,10 +284,13 @@ public class RTPThreadHandler implements Runnable
      */
     public void openTransmitSocket(int localPort, int remotePort)
     {
+
+	m_sendPort = remotePort;
+
         if (!symmetric && isTransmitSocketOpened())
             return;
         
-
+	
 
 	if (!symmetric) {	
 	    m_sendPort = remotePort;
