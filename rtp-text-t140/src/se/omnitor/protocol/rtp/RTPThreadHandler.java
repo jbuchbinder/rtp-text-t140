@@ -19,7 +19,6 @@
 package se.omnitor.protocol.rtp;
 
 import se.omnitor.protocol.rtp.packets.RTPPacket;
-//import se.omnitor.protocol.rtp.RTPSymmetricSocket;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -130,7 +129,8 @@ public class RTPThreadHandler implements Runnable
     private boolean packetLossEnabled = false; //EZ: Enables packet loss
     private int lossRatio = 50;                 //EZ: The packet loss ratio
 
-    private SymmetricMulticastSocket socket;
+    //private SymmetricMulticastSocket socket;
+    private DatagramSocket socket;
     private boolean symmetric;
     private boolean rtpSymmetricSocketStarted;
 
@@ -184,7 +184,7 @@ public class RTPThreadHandler implements Runnable
 	if(symmetric) {
 	    m_sendPort = m_mcastPort;	
 	    try {
-		socket = new SymmetricMulticastSocket(localPort);
+		socket = new DatagramSocket(localPort); 
 	    } catch (Exception e) {
 		System.err.println("RTPThreadHandler: Fialed to create symmetric socket.");
 	    }

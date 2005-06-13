@@ -78,7 +78,7 @@ public class RTCPSenderThread extends Thread
     // IP: Added this to get rid of all static types
     private Session rtpSession;
     
-    private SymmetricMulticastSocket socket;
+    private DatagramSocket socket;
     private boolean symmetric;
 
     /**
@@ -105,7 +105,7 @@ public class RTCPSenderThread extends Thread
     public RTCPSenderThread ( InetAddress multicastGroupIPAddress, 
 			      int rtcpSendFromPort, int rtcpGroupPort, 
 			      Session rtpSession,
-			      SymmetricMulticastSocket socket)
+			      DatagramSocket socket)
     {
         // TODO: Perform sanity check on group address and port number 
         m_InetAddress = multicastGroupIPAddress;

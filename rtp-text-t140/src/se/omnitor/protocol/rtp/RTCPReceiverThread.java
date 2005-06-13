@@ -85,7 +85,7 @@ public class RTCPReceiverThread implements Runnable {
     
     public RTCPReceiverThread(InetAddress multicastGroupIPAddress, 
 			      int rtcpGroupPort, Session rtpSession,
-			      SymmetricMulticastSocket socket) {
+			      DatagramSocket socket) {
 	m_InetAddress = multicastGroupIPAddress;
 	m_port = rtcpGroupPort;
 	this.rtpSession = rtpSession;

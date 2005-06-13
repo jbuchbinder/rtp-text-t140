@@ -46,7 +46,8 @@ public class RTCPThreadHandler extends java.lang.Object
     Session rtpSession;
     InetAddress multicastGroupIPAddress;
     
-    private SymmetricMulticastSocket socket;
+    //private SymmetricMulticastSocket socket;
+    private java.net.MulticastSocket socket;
     private boolean symmetric;
     private int localPort;
     
@@ -75,14 +76,13 @@ public class RTCPThreadHandler extends java.lang.Object
 				boolean symmetric
 				)
     {
-	System.out.println("***********************RTCPThreadHandler created");
-        this.multicastGroupIPAddress = multicastGroupIPAddress;
+	this.multicastGroupIPAddress = multicastGroupIPAddress;
 	this.localPort = localPort;
         this.rtpSession = rtpSession;
 	this.symmetric=symmetric;
 	
 	try {
-	    socket = new SymmetricMulticastSocket(localPort);
+	    socket = new java.net.MulticastSocket(localPort); 
 	} catch (Exception e) {
 	    System.err.println("RTPCHandler, error creating socket. "+e);
 	}
