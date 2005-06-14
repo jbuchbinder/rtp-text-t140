@@ -262,10 +262,10 @@ public class RtpTextTransmitter implements Runnable {
 		    timeNow=outBuffer.getTimeStamp();
 
 		    //EZ: Mark packets after idle period of bufferTime.
-		    //    Allow an additional 100 ms for processing.
+		    //    Allow an additional 250 ms for processing.
 		    //    Also mark first packet.
 		    //    Ignores time wraparounds.
-		    if((timeNow-lastSentTime)>(bufferTime+100)) {
+		    if((timeNow-lastSentTime)>(bufferTime+250)) {
 			outBuffer.setMarker(true);
 		    }
 		    else {
