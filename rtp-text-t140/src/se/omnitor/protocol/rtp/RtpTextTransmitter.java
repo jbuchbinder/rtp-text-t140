@@ -19,7 +19,8 @@
 package se.omnitor.protocol.rtp;
 
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Logger;
+import java.util.Random;
+//import java.util.logging.Logger;
 //import javax.media.Buffer;
 //import se.omnitor.media.protocol.text.t140.Buffer;
 //import se.omnitor.media.protocol.text.t140.TextPacketizer;
@@ -58,13 +59,17 @@ public class RtpTextTransmitter implements Runnable {
     private SyncBuffer dataBuffer;
 
     // Retrieve logger for this package
-    private Logger logger = Logger.getLogger("se.omnitor.protocol.rtp");
+    //private Logger logger = Logger.getLogger("se.omnitor.protocol.rtp");
 
     // EZ: T140 redundancy
     private se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter redFilter;
 
     private boolean redT140FlagOutgoing = false;
     private int redundantT140Generations = 0;
+
+    //EZ: SSRC
+    private long ssrc = 0;
+
     /**
      * Initializes the transmitter. Calculates buffer time.
      *
@@ -97,7 +102,7 @@ public class RtpTextTransmitter implements Runnable {
 			      int redundantT140Generations,
 			      SyncBuffer dataBuffer) {
 
-        logger.finest("Creating RTP text transmitter");
+        //logger.finest("Creating RTP text transmitter");
 
         this.rtpSession = rtpSession;// new Session(ipAddress, 64000);
 
@@ -150,9 +155,11 @@ public class RtpTextTransmitter implements Runnable {
 					       redundantGenerations);
 
         if (redFlagOutgoing) {
+	    System.out.println("**********************Setting payload: "+redPayloadType);
             rtpSession.setSendPayloadType(redPayloadType);
         }
 	else {
+	    System.out.println("**********************Setting payload: "+t140PayloadType);
             rtpSession.setSendPayloadType(t140PayloadType);
         }
 
@@ -163,10 +170,66 @@ public class RtpTextTransmitter implements Runnable {
 	//rtpSession.openRTPTransmitSocket(localPort, remotePort);
 
 	//rtpSession.createAndStartRTCPSenderThread(localPort+1, remotePort+1);
+	
+	//Construct SSRC
+	ssrc = createSSRC();
 
 	if (startRtpTransmit) {
 	    start();
 	}
+    }
+
+    /**
+     * Creates an SSRC for this session.
+     * 
+     * @return The SSRC
+     */
+    private long createSSRC() {
+
+	//Creata a seed to ensure the SSRC is as random as possible,
+	long time  = java.lang.System.currentTimeMillis();
+	long ports = remotePort << 32 | localPort;	
+	long addr  = 0;
+	byte[] rawLocalIPAddr  = null;
+	byte[] rawRemoteIPAddr = null;
+	long seed = 0;
+
+	try {
+	    rawLocalIPAddr  = java.net.InetAddress.getLocalHost().getAddress();
+	    rawRemoteIPAddr = java.net.InetAddress.getByName(ipAddress).getAddress();
+	} catch (java.net.UnknownHostException uhe) {
+	    
+	}
+	
+	//IPv6
+	if(rawLocalIPAddr.length==6) {
+	    addr = rawLocalIPAddr[0] << 40 | 
+		rawLocalIPAddr[1] << 32 | 
+		rawLocalIPAddr[2] << 24 | 
+		rawLocalIPAddr[3] << 16 |
+		rawLocalIPAddr[4] << 8  |
+		rawLocalIPAddr[5];
+	}
+	//IPv4
+	else if(rawLocalIPAddr.length==4) {
+	    addr = rawLocalIPAddr[0] << 56 | 
+		rawLocalIPAddr[1] << 48 | 
+		rawLocalIPAddr[2] << 40 | 
+		rawLocalIPAddr[3] << 32 |
+		rawRemoteIPAddr[0] << 24 |
+		rawRemoteIPAddr[1] << 16 |
+		rawRemoteIPAddr[2] << 8  |
+		rawRemoteIPAddr[3];
+	}
+	else {
+	    System.out.println("Unknown IP format in createSSRC");
+	}	
+
+	seed = (time | ports | addr);
+
+	//Use the seed to get the SSRC.
+	Random rand = new Random(seed);
+	return rand.nextLong();
     }
 
     /**
@@ -176,7 +239,7 @@ public class RtpTextTransmitter implements Runnable {
      * for en requirements of the finalize() function)
      */
     protected void finalize() throws Throwable {
-        logger.finest("Finalizing instance of RtpTextTransmitter.");
+        //logger.finest("Finalizing instance of RtpTextTransmitter.");
     }
 
     /**
@@ -204,7 +267,7 @@ public class RtpTextTransmitter implements Runnable {
 	long timeNow = 0;
 	int bufferTime;
 
-        logger.finest("Beginning of text transmit thread.");
+        //logger.finest("Beginning of text transmit thread.");
 
 	//DEBUG
 	System.out.println("Use redudancy: " + redFlagOutgoing);
@@ -286,6 +349,7 @@ public class RtpTextTransmitter implements Runnable {
 		    outputPacket.setSequenceNumber(outBuffer.
 						   getSequenceNumber());
 		    outputPacket.setMarker(outBuffer.getMarker());
+		    outputPacket.setSsrc(ssrc);
 		    
 		    //DEBUG
 
@@ -294,11 +358,11 @@ public class RtpTextTransmitter implements Runnable {
 
 	    }
 	    catch (InterruptedException ie) {
-		logger.finest("Transmit thread interrupted.");
+		//logger.finest("Transmit thread interrupted.");
 	    }
         }
         // Finally do..
-	logger.finest("Transmit thread stopped.");
+	//logger.finest("Transmit thread stopped.");
 
         // Release thread
         thisThread = null;
@@ -322,7 +386,7 @@ public class RtpTextTransmitter implements Runnable {
     {
         if (thisThread == null)
         {
-            logger.finest("Starting transmit thread.");
+            //logger.finest("Starting transmit thread.");
             thisThread = new StateThread(this, "RtpTextTransmitter");
             thisThread.start();
         }
@@ -336,15 +400,15 @@ public class RtpTextTransmitter implements Runnable {
     {
         if (thisThread != null)
         {
-            logger.finest("Stopping transmit thread.");
+            //logger.finest("Stopping transmit thread.");
 	    dataBuffer.stop();
             thisThread.setState(StateThread.STOP);
             thisThread.interrupt();
-            logger.finest("Stopping RTP and RTCP sessions.");
+	    // logger.finest("Stopping RTP and RTCP sessions.");
             rtpSession.stopRTCPSenderThread();
 	    rtpSession.stopRTPThread();
             rtpSession = null;
-            logger.finest("RTP session stopped.");
+            //logger.finest("RTP session stopped.");
         }
     }
 

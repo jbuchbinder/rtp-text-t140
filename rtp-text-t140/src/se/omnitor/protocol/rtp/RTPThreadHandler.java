@@ -25,7 +25,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 import java.util.Random;
 import java.io.IOException;
 
@@ -124,7 +124,7 @@ public class RTPThreadHandler implements Runnable
     private long    timestamp;                  // 32 bits
 
 
-    private Logger logger = Logger.getLogger("se.omnitor.rtp");
+    //private Logger logger = Logger.getLogger("se.omnitor.rtp");
 
     private boolean packetLossEnabled = false; //EZ: Enables packet loss
     private int lossRatio = 50;                 //EZ: The packet loss ratio
@@ -234,10 +234,10 @@ public class RTPThreadHandler implements Runnable
                 m_sockReceive = new MulticastSocket( m_mcastPort );
                 //s.setTimeToLive(128);
             } catch (IOException e) {
-		logger.severe("Cannot open receive socket! " +
-			      "Exception raised:\n" +
-			      e.getMessage() + "\n" + 
-			      e.getStackTrace().toString());
+		//logger.severe("Cannot open receive socket! " +
+		//      "Exception raised:\n" +
+		//      e.getMessage() + "\n" + 
+		//      e.getStackTrace().toString());
             }
 	}
     }
@@ -388,8 +388,9 @@ public class RTPThreadHandler implements Runnable
         
         byte[] ss = new byte[4];
         //ss = PacketUtils.LongToBytes( rtpSession.SSRC, 4 );
-        ss = PacketUtils.longToBytes(0, 4 );
-        
+        //ss = PacketUtils.longToBytes(0, 4 );
+        ss = PacketUtils.longToBytes(packet.getSsrc(),4);
+
         ////////////////////////////////////////////////////////
         // Construct the header by appending all the above byte
         // arrays into RTPPacket
