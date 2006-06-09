@@ -32,6 +32,10 @@ import se.omnitor.protocol.rtp.text.RtpTextPacketizer;
 import se.omnitor.protocol.rtp.text.SyncBuffer;
 import se.omnitor.protocol.rtp.text.TextConstants;
 
+// import LogClasses and Classes
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * An RTP text transmitter that reads characters from a buffer and sends them
  * over the network to another host.
@@ -72,6 +76,12 @@ public class RtpTextTransmitter implements Runnable {
     //EZ: SSRC
     private long ssrc = 0;
 
+    // declare package and classname
+    public final static String CLASS_NAME = RtpTextTransmitter.class.getName();
+    // get an instance of Logger
+    private static Logger logger = Logger.getLogger(CLASS_NAME);
+
+
     /**
      * Initializes the transmitter. Calculates buffer time.
      *
@@ -104,10 +114,13 @@ public class RtpTextTransmitter implements Runnable {
 			      int redundantT140Generations,
 			      SyncBuffer dataBuffer, boolean econf351Client) {
 
-        //logger.finest("Creating RTP text transmitter");
+    // write methodname
+    final String METHOD = "RtpTextTransmitter(Session rtpSession, ...)";
+    // log when entering a method
+    logger.entering(CLASS_NAME, METHOD, new Object[]{ipAddress, "'" + localPort + "'" , "'" + remotePort + "'"});
+
 
         this.rtpSession = rtpSession;// new Session(ipAddress, 64000);
-
         this.ipAddress = ipAddress;
         this.localPort = localPort;
         this.remotePort = remotePort;
@@ -120,7 +133,8 @@ public class RtpTextTransmitter implements Runnable {
 	this.dataBuffer = dataBuffer;
         this.isEconf351Client = econf351Client;
 
-	if (redFlagOutgoing) {
+
+    if (redFlagOutgoing) {
 	    dataBuffer.setRedGen(redundantGenerations);
 	}
 	else {
@@ -158,11 +172,9 @@ public class RtpTextTransmitter implements Runnable {
 					       redundantGenerations);
 
         if (redFlagOutgoing) {
-	    System.out.println("**********************Setting payload: "+redPayloadType);
             rtpSession.setSendPayloadType(redPayloadType);
         }
 	else {
-	    System.out.println("**********************Setting payload: "+t140PayloadType);
             rtpSession.setSendPayloadType(t140PayloadType);
         }
 
@@ -180,6 +192,8 @@ public class RtpTextTransmitter implements Runnable {
 	if (startRtpTransmit) {
 	    start();
 	}
+        logger.logp(Level.FINEST, CLASS_NAME, METHOD, "checking ssrc", new Long(ssrc));
+        logger.exiting(CLASS_NAME, METHOD);
     }
 
     /**
@@ -341,7 +355,6 @@ public class RtpTextTransmitter implements Runnable {
 
 		    // Temp: adding zero at end. This will be removed.
 		    if(isEconf351Client) {
-                        System.out.println("<<::RTPTRANSMitter::RUN::lägger till noll>>");
                         byte[] dataToSend = outBuffer.getData();
                         byte[] newData = new byte[dataToSend.length + 1];
                         System.arraycopy(dataToSend, 0, newData, 0,
@@ -355,8 +368,6 @@ public class RtpTextTransmitter implements Runnable {
 						   getSequenceNumber());
 		    outputPacket.setMarker(outBuffer.getMarker());
 		    outputPacket.setSsrc(ssrc);
-
-		    //DEBUG
 
 		    rtpSession.sendRTPPacket(outputPacket);
 		}
