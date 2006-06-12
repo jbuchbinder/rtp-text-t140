@@ -130,15 +130,15 @@ public class RtpTextTransmitter implements Runnable {
 	this.dataBuffer = dataBuffer;
         this.isEconf351Client = econf351Client;
 
-
-    if (redFlagOutgoing) {
+        // using redundancy
+        if (redFlagOutgoing) {
 	    dataBuffer.setRedGen(redundantGenerations);
 	}
 	else {
 	    dataBuffer.setRedGen(0);
 	}
 
-	//EZ: T140 redundancy init
+	// EZ: T140 redundancy init
 	if (redundantT140Generations>0) {
 	    redFilter =
 		new se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter
@@ -300,6 +300,7 @@ public class RtpTextTransmitter implements Runnable {
 	    try {
 		data = dataBuffer.getData();
 
+
 		//DEBUG
 		System.out.print("Data fetched from buffer: ");
 		for (int cnt5=0; cnt5<data.length; cnt5++) {
@@ -311,7 +312,6 @@ public class RtpTextTransmitter implements Runnable {
 
 
 		if (data.length > 0 || redFlagOutgoing) {
-
 
 		    if (thisThread.checkState() == StateThread.STOP) {
 			break;
@@ -333,9 +333,8 @@ public class RtpTextTransmitter implements Runnable {
 
 		    outBuffer = new RtpTextBuffer();
 
-
 		    textPacketizer.encode(inBuffer, outBuffer);
-		    timeNow=outBuffer.getTimeStamp();
+		    timeNow = outBuffer.getTimeStamp();
 
 		    //EZ: Mark packets after idle period of bufferTime.
 		    //    Allow an additional 250 ms for processing.
@@ -367,7 +366,6 @@ public class RtpTextTransmitter implements Runnable {
 
 		    rtpSession.sendRTPPacket(outputPacket);
 		}
-
 	    }
 	    catch (InterruptedException ie) {
 		logger.logp(Level.FINE, CLASS_NAME, METHOD, "Transmit thread interrupted", ie);
