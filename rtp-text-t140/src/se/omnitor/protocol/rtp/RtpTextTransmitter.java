@@ -64,9 +64,6 @@ public class RtpTextTransmitter implements Runnable {
 
     private SyncBuffer dataBuffer;
 
-    // Retrieve logger for this package
-    //private Logger logger = Logger.getLogger("se.omnitor.protocol.rtp");
-
     // EZ: T140 redundancy
     private se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter redFilter;
 
@@ -269,8 +266,12 @@ public class RtpTextTransmitter implements Runnable {
      */
     public void run()
     {
+        // write methodname
+        final String METHOD = "run()";
+        // log when entering a method
+        logger.entering(CLASS_NAME, METHOD);
+
         String stringIntoBytes;
-        RTPPacket inputPacket;
 	RTPPacket outputPacket;
 	byte[] data;
 	int cnt;
@@ -284,20 +285,15 @@ public class RtpTextTransmitter implements Runnable {
 	long timeNow = 0;
 	int bufferTime;
 
-        //logger.finest("Beginning of text transmit thread.");
-
-	//DEBUG
-	System.out.println("Use redudancy: " + redFlagOutgoing);
-
+        logger.logp(Level.FINEST, CLASS_NAME, METHOD, "is using redundacy:" + redFlagOutgoing);
 
 	dataBuffer.start();
 	dataBuffer.setData(TextConstants.ZERO_WIDTH_NO_BREAK_SPACE);
 
-	bufferTime=dataBuffer.getBufferTime();
+	bufferTime = dataBuffer.getBufferTime();
 
         while (thisThread.checkState() != StateThread.STOP) {
 
-	    inputPacket = new RTPPacket();
 	    outputPacket = new RTPPacket();
 
 	    // Catch data from buffer
@@ -374,14 +370,14 @@ public class RtpTextTransmitter implements Runnable {
 
 	    }
 	    catch (InterruptedException ie) {
-		//logger.finest("Transmit thread interrupted.");
+		logger.logp(Level.FINE, CLASS_NAME, METHOD, "Transmit thread interrupted", ie);
 	    }
         }
-        // Finally do..
-	//logger.finest("Transmit thread stopped.");
 
         // Release thread
         thisThread = null;
+
+        logger.exiting(CLASS_NAME, METHOD);
     }
 
     /**
