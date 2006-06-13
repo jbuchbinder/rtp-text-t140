@@ -1,13 +1,13 @@
 /*
  * RTP text/t140 Library
- * 
+ *
  * Copyright (C) 2004 Board of Regents of the University of Wisconsin System
  * (Univ. of Wisconsin-Madison, Trace R&D Center)
  * Copyright (C) 2004 Omnitor AB
  *
  * This software was developed with support from the National Institute on
  * Disability and Rehabilitation Research, US Dept of Education under Grant
- * # H133E990006 and H133E040014  
+ * # H133E990006 and H133E040014
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,7 @@
  * along with this library; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Please send a copy of any improved versions of the library to: 
+ * Please send a copy of any improved versions of the library to:
  * Gunnar Hellstrom, Omnitor AB, Renathvagen 2, SE 121 37 Johanneshov, SWEDEN
  * Gregg Vanderheiden, Trace Center, U of Wisconsin, Madison, Wi 53706
  *
@@ -32,8 +32,12 @@ package se.omnitor.protocol.rtp.text;
 
 import se.omnitor.util.FifoBuffer;
 
+// import LogClasses and Classes
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
- * RFC 4103 states that text should be buffered 300 ms before sending. If 
+ * RFC 4103 states that text should be buffered 300 ms before sending. If
  * no text has been written in 300 ms and we have redundant data that should
  * be sent, empty data should be appended. <br>
  * <br>
@@ -47,7 +51,7 @@ import se.omnitor.util.FifoBuffer;
  * @author Andreas Piirimets, Omnitor AB
  */
 public class SyncBuffer extends FifoBuffer implements Runnable {
-    
+
     private byte[] dataWaiting;
     private byte[] dataToSend;
     private int redGensToSend;
@@ -56,7 +60,13 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
     private boolean running;
     private Thread thread;
     private Integer dataSetSemaphore;
-    
+
+    // declare package and classname
+    public final static String CLASS_NAME = SyncBuffer.class.getName();
+    // get an instance of Logger
+    private static Logger logger = Logger.getLogger(CLASS_NAME);
+
+
     /**
      * Initializes.
      *
@@ -66,39 +76,55 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
      * to RFC 4103, this SHOULD be 300 ms.
      */
     public SyncBuffer(int redGen, int bufferTime) {
-	this.redGen = redGen;
+
+        // write methodname
+        final String METHOD = "SyncBuffer(int redGen, int bufferTime)";
+        // log when entering a method
+        logger.entering(CLASS_NAME, METHOD);
+
+        this.redGen = redGen;
 	this.bufferTime = bufferTime;
 
 	dataSetSemaphore = new Integer(0);
-	
+
 	dataWaiting = new byte[0];
 	dataToSend = new byte[0];
 	redGensToSend = 0;
 
 	running = false;
 	thread = null;
+
+        logger.exiting(CLASS_NAME, METHOD);
     }
 
     public void start() {
 
+        // write methodname
+        final String METHOD = "start()";
+        // log when entering a method
+        logger.entering(CLASS_NAME, METHOD);
+
+
 	if (!running) {
 	    running = true;
-	    
+
 	    thread = new Thread(this);
 	    thread.start();
 	}
+
+        logger.exiting(CLASS_NAME, METHOD);
     }
 
     public void stop() {
 	running = false;
 	thread.interrupt();
     }
-    
+
     /**
      * Sets new data, this should be called from GUI. If data exists it is
      * appended to the existing data.
-     * 
-     * @param newData The data to set/append. 
+     *
+     * @param newData The data to set/append.
      *
      * @todo Backspace handling - If a backspace is in the middle of the
      * buffer, remove characters from buffer instead of sending backspace.
@@ -106,7 +132,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
     public synchronized void setData(byte[] newData) {
 	synchronized (dataSetSemaphore) {
 	    byte[] temp = null;
-	    
+
 	    if (dataWaiting.length == 0) {
 		dataWaiting = newData;
 	    }
@@ -114,10 +140,10 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 		temp = dataWaiting;
 		dataWaiting = new byte[temp.length + newData.length];
 		System.arraycopy(temp, 0, dataWaiting, 0, temp.length);
-		System.arraycopy(newData, 0, dataWaiting, temp.length, 
+		System.arraycopy(newData, 0, dataWaiting, temp.length,
 				 newData.length);
 	    }
-	    
+
 	    /*
 	      int arrayCnt = temp.length;
 	      int cnt;
@@ -125,16 +151,16 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 	      if (data[cnt] == TextConstants.BACKSPACE &&
 	      arrayCnt > 0 &&
 	      (int)this.data[arrayCnt-1] != 8) {
-	      
+
 	      arrayCnt--;
 	      }
 	      else {
 	      this.data[arrayCnt] = data[cnt];
-	      
+
 	      arrayCnt++;
 	      }
 	      }
-	      
+
 	      if (arrayCnt != cnt+temp.length) {
 	      temp = this.data;
 	      this.data = new byte[arrayCnt];
@@ -146,31 +172,31 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 	}
 
     }
-    
-    
+
+
     /**
      * Gets the data of this object.
      * Data is consumed it is retrieved.
      * This method blocks until data is available.
-     * 
+     *
      * @throws InterruptedException If the wait was interrupted.
      * @return The data.
-     */ 
+     */
     public synchronized byte[] getData() throws InterruptedException {
 	byte[] temp;
 
 	wait();
-	
+
 	temp = dataToSend;
 	dataToSend = new byte[0];
 
 	return temp;
     }
-    
+
     /**
      * Empties the buffers.
      *
-     */    
+     */
     public synchronized void empty() {
 	dataWaiting = new byte[0];
 	dataToSend = new byte[0];
@@ -183,15 +209,21 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
      * CPS demand.
      */
     public void run() {
-    
+
+        // write methodname
+        final String METHOD = "run()";
+        // log when entering a method
+        logger.entering(CLASS_NAME, METHOD);
+
+
 	while (running) {
 
 	    try {
 		synchronized (dataSetSemaphore) {
-		    
+
 		    if (dataToSend.length == 0) {
 			dataSetSemaphore.wait();
-			
+
 		    }
 		}
 	    }
@@ -204,41 +236,43 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 		}
 		catch (InterruptedException ie) {
 		}
-		
+
 		synchronized (this) {
-		    if (dataWaiting.length > 0) {
-			
+		    logger.logp(Level.FINEST, CLASS_NAME, METHOD, "dataWaiting to be sent in future", dataWaiting.toString());
+                    logger.logp(Level.FINEST, CLASS_NAME, METHOD, "dataWaiting to be sent now", dataToSend.toString());
+                    if (dataWaiting.length > 0) {
+
 			if (dataToSend.length > 0) {
 			    byte[] temp = dataToSend;
-			    dataToSend = 
+			    dataToSend =
 				new byte[temp.length + dataWaiting.length];
-			    System.arraycopy(temp, 0, dataToSend, 0, 
+			    System.arraycopy(temp, 0, dataToSend, 0,
 					     temp.length);
-			    System.arraycopy(dataWaiting, 0, dataToSend, 
+			    System.arraycopy(dataWaiting, 0, dataToSend,
 					     temp.length, dataWaiting.length);
 			}
 			else {
 			    dataToSend = dataWaiting;
 			}
-			
+
 			dataWaiting = new byte[0];
 			notify();
 			redGensToSend = redGen;
 		    }
 		    else if (redGensToSend > 0) {
-			
+
 			notify();
-			
+
 			if (dataToSend.length == 0) {
 			    redGensToSend--;
 			}
 		    }
 		}
-	    } 
+	    }
 
 	}
 
-
+        logger.exiting(CLASS_NAME, METHOD);
     }
 
     /**
@@ -250,7 +284,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
     public void setRedGen(int redGen) {
 	this.redGen = redGen;
     }
-    
+
 
     /**
      * Sets the buffer time.
