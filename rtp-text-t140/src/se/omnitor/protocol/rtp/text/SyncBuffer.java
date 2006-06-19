@@ -61,6 +61,8 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
     private Thread thread;
     private Integer dataSetSemaphore;
 
+    private boolean sendOnCR = false;
+
     // declare package and classname
     public final static String CLASS_NAME = SyncBuffer.class.getName();
     // get an instance of Logger
@@ -89,7 +91,8 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 
 	dataWaiting = new byte[0];
 	dataToSend = new byte[0];
-	redGensToSend = 0;
+
+        redGensToSend = 0;
 
 	running = false;
 	thread = null;
@@ -170,7 +173,6 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 
 	    dataSetSemaphore.notify();
 	}
-
     }
 
 
@@ -183,14 +185,138 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
      * @return The data.
      */
     public synchronized byte[] getData() throws InterruptedException {
-	byte[] temp;
 
-	wait();
+        // write methodname
+        final String METHOD = "getData()";
+        // log when entering a method
+        logger.entering(CLASS_NAME, METHOD);
 
-	temp = dataToSend;
-	dataToSend = new byte[0];
+        byte[] temp = null;
 
-	return temp;
+        try {
+            wait();
+
+            temp = dataToSend;
+
+            if (sendOnCR) {
+                int containsCR = -100;
+                // check if temp contains CR, and if it does you get the position of the first element
+                containsCR = containsCR(temp);
+
+                // if data does not contain CR
+                if (containsCR == -1) {
+                    temp = new byte[0];
+                }
+                //  data contains CR
+                else {
+                    logger.logp(Level.FINEST, CLASS_NAME, METHOD, "data contains one or more CR");
+                    byte[] temp2 = temp;
+                    int lastPositionOfCR = containsCR;
+
+                    // while we don't find the last CR
+                    while((containsCR = getPositionOfNextCR(temp, lastPositionOfCR))>-1) {
+                        lastPositionOfCR = containsCR;
+                    }
+
+                    temp = new byte[lastPositionOfCR+3];
+                    System.arraycopy(temp2, 0, temp, 0, temp.length);
+
+                    // if the data ended with an CR
+                    if(lastPositionOfCR+3 == temp2.length) {
+                        logger.logp(Level.FINEST, CLASS_NAME, METHOD, "the data ended with an CR");
+                        dataToSend = new byte[0];
+                    }
+                    // else we have to save the data after the last CR
+                    else {
+                        logger.logp(Level.FINEST, CLASS_NAME, METHOD, "the data ended with data after last CR");
+                        dataToSend = new byte[temp2.length -(lastPositionOfCR + 3)];
+                        System.arraycopy(temp2, lastPositionOfCR+3, dataToSend, 0, dataToSend.length);
+                    }
+                }
+            }
+            // else don't wait for CR
+            else {
+                dataToSend = new byte[0];
+            }
+        }
+        catch(Throwable t) {
+            logger.logp(Level.SEVERE, CLASS_NAME, METHOD, "unexpected throwable caught (swallowed), probably due to a bug", t);
+        }
+        finally {
+            return temp;
+        }
+    }
+
+    /* A Java byte has a value of -128 to 127.  With eight bits and no
+     sign, the negative numbers could be represented as
+     a value of 128 to 255.  This method makes such a conversion, but
+     stores the result in an integer since Java does
+     not support unsigned bytes. <p>
+
+     @param aByte The byte with a possibly negative value. <p>
+     @return An integer with a value of 0 to 255. <p>
+     */
+    public static int byteToPositiveInt( byte aByte )
+    {
+        int i = aByte ;
+        if ( i < 0 ) {
+            i += 256 ;
+        }
+        return i ;
+    }
+
+    /**
+     * checks if a bytearray contains a CR (carrige return)
+     * @param byte[] aDataArray the byte array to be examined
+     * @return int first position of the CR, returns -1 if aDataArray is null or
+     * does not contain a CR
+     */
+    private int containsCR(byte[] aDataArray) {
+
+        // if null or lenght<3, CR takes at least 3 bytes
+        if(aDataArray==null || aDataArray.length<3) {
+            return -1;
+        }
+        // else might contain CR, lets check
+        else {
+            // check for the value of CR in three bytes
+            for (int i = 0; i < aDataArray.length-2; i++) {
+                if (byteToPositiveInt(aDataArray[i]) == 0xE2 &&
+                    byteToPositiveInt(aDataArray[i+1]) == 0x80 &&
+                    byteToPositiveInt(aDataArray[i+2]) == 0xA8) {
+                    return i;
+                }
+             }
+             // we have checked the bytearray and it did not contain CR
+             return -1;
+        }
+    }
+
+    /**
+     * checks if for the position of next CR (carrige return) (if any)
+     * @param byte[] aDataArray the byte array to be examined
+     * @param int aStartPosition where to start looking for CR
+     * @return int the first position of a CR from aStartPosition+3,
+     * returns -1 if aDataArray is null or if aStartPosition+3 til end does not contain a CR
+     * */
+    private int getPositionOfNextCR(byte[] aDataArray, int aStartPosition) {
+
+        byte[] temp = null;
+        int position = -1;
+        if(aDataArray==null || aStartPosition>(aDataArray.length-1)) {
+            return position;
+        }
+        else {
+            temp = new byte[aDataArray.length-(aStartPosition+3)];
+            System.arraycopy(aDataArray, aStartPosition+3, temp, 0, temp.length);
+            position = containsCR(temp);
+            if(position==-1) {
+                return position;
+            }
+            else {
+                return aStartPosition+position+3;
+            }
+        }
     }
 
     /**
@@ -230,16 +356,16 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 	    catch (InterruptedException ie) {
 	    }
 
-	    while (dataWaiting.length > 0 || redGensToSend > 0) {
+	    logger.logp(Level.FINEST, CLASS_NAME, METHOD, "the buffertime is", new Integer(bufferTime));
+            while (dataWaiting.length > 0 || redGensToSend > 0) {
 		try {
-		    Thread.sleep(bufferTime);
+                    Thread.sleep(bufferTime);
 		}
 		catch (InterruptedException ie) {
 		}
 
 		synchronized (this) {
-		    logger.logp(Level.FINEST, CLASS_NAME, METHOD, "dataWaiting to be sent in future", dataWaiting.toString());
-                    logger.logp(Level.FINEST, CLASS_NAME, METHOD, "dataWaiting to be sent now", dataToSend.toString());
+
                     if (dataWaiting.length > 0) {
 
 			if (dataToSend.length > 0) {
@@ -293,6 +419,24 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
      */
     public void setBufferTime(int bufferTime) {
 	this.bufferTime = bufferTime;
+    }
+
+    /**
+    * Sets if the SynchBuffer should send on CR or realtime.
+    *
+    * @param boolean aSendOnCR should buffer send on CR
+    */
+    public void setSendOnCR(boolean aSendOnCR) {
+        this.sendOnCR = aSendOnCR;
+    }
+
+    /**
+     * Gets if syncbuffer is set to send on CR.
+     *
+     * @return The boolean.
+     */
+    public boolean getSendOnCR() {
+        return sendOnCR;
     }
 
     /**

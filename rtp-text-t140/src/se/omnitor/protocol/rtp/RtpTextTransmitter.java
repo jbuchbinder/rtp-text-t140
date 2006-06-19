@@ -300,72 +300,64 @@ public class RtpTextTransmitter implements Runnable {
 	    try {
 		data = dataBuffer.getData();
 
-
-		//DEBUG
-		System.out.print("Data fetched from buffer: ");
-		for (int cnt5=0; cnt5<data.length; cnt5++) {
-		    System.out.print(data[cnt5]);
+                for (int cnt5=0; cnt5<data.length; cnt5++) {
+		    logger.logp(Level.FINEST, CLASS_NAME, METHOD, "data fetched from buffer, element " + cnt5 + " was '" + data[cnt5] + "' from buffer");
 		}
-		System.out.println("");
-		System.out.println("data.length = " + data.length);
-		System.out.println("redFlagOutg = " + redFlagOutgoing);
 
-
-		if (data.length > 0 || redFlagOutgoing) {
+                if (data.length > 0 || redFlagOutgoing) {
 
 		    if (thisThread.checkState() == StateThread.STOP) {
 			break;
 		    }
 
-		    //EZ: Add T.140 redundancy
-		    if (redundantT140Generations>0) {
-			data = redFilter.addRedundancy(data);
-		    }
+                        //EZ: Add T.140 redundancy
+                        if (redundantT140Generations > 0) {
+                            data = redFilter.addRedundancy(data);
+                        }
 
-		    inBuffer = new RtpTextBuffer();
-		    inBuffer.setData(data);
-		    if (data == null) {
-			inBuffer.setLength(0);
-		    }
-		    else {
-			inBuffer.setLength(data.length);
-		    }
+                        inBuffer = new RtpTextBuffer();
+                        inBuffer.setData(data);
+                        if (data == null) {
+                            inBuffer.setLength(0);
+                        } else {
+                            inBuffer.setLength(data.length);
+                        }
 
-		    outBuffer = new RtpTextBuffer();
+                        outBuffer = new RtpTextBuffer();
 
-		    textPacketizer.encode(inBuffer, outBuffer);
-		    timeNow = outBuffer.getTimeStamp();
+                        textPacketizer.encode(inBuffer, outBuffer);
+                        timeNow = outBuffer.getTimeStamp();
 
-		    //EZ: Mark packets after idle period of bufferTime.
-		    //    Allow an additional 250 ms for processing.
-		    //    Also mark first packet.
-		    //    Ignores time wraparounds.
-		    if((timeNow-lastSentTime)>(bufferTime+250)) {
-			outBuffer.setMarker(true);
-		    }
-		    else {
-			outBuffer.setMarker(false);
-		    }
-		    lastSentTime=timeNow;
+                        //EZ: Mark packets after idle period of bufferTime.
+                        //    Allow an additional 250 ms for processing.
+                        //    Also mark first packet.
+                        //    Ignores time wraparounds.
+                        if ((timeNow - lastSentTime) > (bufferTime + 250)) {
+                            outBuffer.setMarker(true);
+                        } else {
+                            outBuffer.setMarker(false);
+                        }
+                        lastSentTime = timeNow;
 
-		    // Temp: adding zero at end. This will be removed.
-		    if(isEconf351Client) {
-                        byte[] dataToSend = outBuffer.getData();
-                        byte[] newData = new byte[dataToSend.length + 1];
-                        System.arraycopy(dataToSend, 0, newData, 0,
-                                         dataToSend.length);
-                        newData[dataToSend.length] = 0;
-                        outBuffer.setData(newData);
+                        // Temp: adding zero at end. This will be removed.
+                        if (isEconf351Client) {
+                            byte[] dataToSend = outBuffer.getData();
+                            byte[] newData = new byte[dataToSend.length + 1];
+                            System.arraycopy(dataToSend, 0, newData, 0,
+                                             dataToSend.length);
+                            newData[dataToSend.length] = 0;
+                            outBuffer.setData(newData);
+                        }
+                        outputPacket.setPayloadData(outBuffer.getData());
+                        outputPacket.setTimeStamp(outBuffer.getTimeStamp());
+                        outputPacket.setSequenceNumber(outBuffer.
+                                                       getSequenceNumber());
+                        outputPacket.setMarker(outBuffer.getMarker());
+                        outputPacket.setSsrc(ssrc);
+
+                        rtpSession.sendRTPPacket(outputPacket);
                     }
-		    outputPacket.setPayloadData(outBuffer.getData());
-		    outputPacket.setTimeStamp(outBuffer.getTimeStamp());
-		    outputPacket.setSequenceNumber(outBuffer.
-						   getSequenceNumber());
-		    outputPacket.setMarker(outBuffer.getMarker());
-		    outputPacket.setSsrc(ssrc);
 
-		    rtpSession.sendRTPPacket(outputPacket);
-		}
 	    }
 	    catch (InterruptedException ie) {
 		logger.logp(Level.FINE, CLASS_NAME, METHOD, "Transmit thread interrupted", ie);
