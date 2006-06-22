@@ -193,8 +193,10 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 
         byte[] temp = null;
 
+
+        wait();
+
         try {
-            wait();
 
             temp = dataToSend;
 
