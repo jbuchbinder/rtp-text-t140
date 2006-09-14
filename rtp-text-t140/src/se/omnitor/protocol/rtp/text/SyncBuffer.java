@@ -193,7 +193,6 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 
         byte[] temp = null;
 
-
         wait();
 
         try {
@@ -350,13 +349,18 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 		synchronized (dataSetSemaphore) {
 
 		    if (dataToSend.length == 0) {
-			dataSetSemaphore.wait();
-
+			dataSetSemaphore.wait(55000);
 		    }
 		}
 	    }
 	    catch (InterruptedException ie) {
 	    }
+
+            // If nothing is sent in 55 seconds, send a zero width no break
+            // space. This will prevent NATs closing the UDP hole.
+            if (dataWaiting.length == 0) {
+                setData(TextConstants.ZERO_WIDTH_NO_BREAK_SPACE);
+            }
 
 	    logger.logp(Level.FINEST, CLASS_NAME, METHOD, "the buffertime is", new Integer(bufferTime));
             while (dataWaiting.length > 0 || redGensToSend > 0) {
