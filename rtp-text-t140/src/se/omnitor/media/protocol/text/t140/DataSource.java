@@ -1,13 +1,13 @@
 /*
  * RTP text/t140 Library
- * 
+ *
  * Copyright (C) 2004 Board of Regents of the University of Wisconsin System
  * (Univ. of Wisconsin-Madison, Trace R&D Center)
  * Copyright (C) 2004 Omnitor AB
  *
  * This software was developed with support from the National Institute on
  * Disability and Rehabilitation Research, US Dept of Education under Grant
- * # H133E990006 and H133E040014  
+ * # H133E990006 and H133E040014
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,7 @@
  * along with this library; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Please send a copy of any improved versions of the library to: 
+ * Please send a copy of any improved versions of the library to:
  * Gunnar Hellstrom, Omnitor AB, Renathvagen 2, SE 121 37 Johanneshov, SWEDEN
  * Gregg Vanderheiden, Trace Center, U of Wisconsin, Madison, Wi 53706
  *
@@ -67,7 +67,7 @@ public class DataSource extends PushBufferDataSource {
     private TextStream[] streams;
     private boolean started;
     private SyncBuffer sb;
-    
+
     private StdInReader stdInReader;
 
 
@@ -87,7 +87,7 @@ public class DataSource extends PushBufferDataSource {
 
     /**
      * Gets the content type of this data source.
-     * 
+     *
      * @return The content type.
      */
     public String getContentType() {
@@ -106,7 +106,7 @@ public class DataSource extends PushBufferDataSource {
 
     /**
      * Connects this data source to its source.
-     * 
+     *
      * @throws IOException If connect fails.
      */
     public void connect() throws IOException {
@@ -172,7 +172,7 @@ public class DataSource extends PushBufferDataSource {
 
 	    }
 	    else if (type.toUpperCase().equals("BUFFER")) {
-		
+
 		if (sb == null) {
 		    logger.severe("SyncBuffer must be set before starting " +
 				  "DataSource!");
@@ -183,7 +183,7 @@ public class DataSource extends PushBufferDataSource {
 		}
 	    }
 	    else {
-		
+
 		logger.severe("Unknown format: " + getLocator().toString() +
 			      " (" + type + ")");
 
@@ -310,7 +310,7 @@ public class DataSource extends PushBufferDataSource {
 	public ContentDescriptor getContentDescriptor() {
 	    return cd;
 	}
-	
+
 	public Object getControl(String controlName) {
 	    return null;
 	}
@@ -329,8 +329,8 @@ public class DataSource extends PushBufferDataSource {
 	    sb.start();
 
 	    running = true;
-	    
-	    thread = new Thread(this);
+
+	    thread = new Thread(this, "JMF text datasource");
 	    thread.start();
 	}
 
@@ -368,7 +368,7 @@ public class DataSource extends PushBufferDataSource {
 					     tempData.length);
 			}
 		    }
-		    
+
 		    transferHandler.transferData(this);
 		}
 		catch (InterruptedException ie) {
@@ -379,7 +379,7 @@ public class DataSource extends PushBufferDataSource {
 	}
 
     }
-	    
+
 }
 
 
