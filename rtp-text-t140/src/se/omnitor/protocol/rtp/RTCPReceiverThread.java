@@ -30,6 +30,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.SocketException;
 import java.util.Date;
 
 
@@ -190,9 +191,10 @@ public class RTCPReceiverThread implements Runnable {
 		    socket.receive(header);
 		}catch (java.net.SocketTimeoutException ste) {
 		    //It's ok to timeout
-		}catch (Exception e) {
-		    System.err.println("RTCPReceiver recieve error:"+e);
-                    e.printStackTrace();
+		}catch (SocketException e) {
+                    // It's OK to have socket exception when socket is closed.
+		    //System.err.println("RTCPReceiver recieve error:"+e);
+                    //e.printStackTrace();
 		}
 
 		rtpSession.outprint("Len " + header.getLength() +  "  " +

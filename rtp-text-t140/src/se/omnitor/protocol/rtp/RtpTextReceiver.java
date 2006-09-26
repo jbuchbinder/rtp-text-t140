@@ -99,8 +99,6 @@ public class RtpTextReceiver implements Runnable,
         this.redPayloadType = redPayloadType;
 	this.dataBuffer = dataBuffer;
 
-	//DEBUG
-	System.out.println("redFlagIncoming = " + redFlagIncoming);
 
 	textDePacketizer = new RtpTextDePacketizer(t140PayloadType,
 						   redPayloadType,
@@ -240,14 +238,10 @@ public class RtpTextReceiver implements Runnable,
 	rtpPacket.setPayloadData(null);
 	byte[] datap = outBuffer.getData();
 
-	//DEBUG
-	//System.out.println("Receiver data: '" + new String(datap) + "'");
 
 	//EZ: T140 redundancy filter
 	byte[] data = redFilter.filterInput(datap);
 
-	//DEBUG
-	//System.out.println("After filter: '" + new String(data) + "'");
 
         if (data != null) {
 	    logger.finest("Data to buffer: " + new String(data));
