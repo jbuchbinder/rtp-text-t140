@@ -1,6 +1,6 @@
-/* 
+/*
  * Copyright (C) 2004  University of Wisconsin-Madison and Omnitor AB
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -53,27 +53,27 @@ public class Session extends java.lang.Object
     /**
      *   Random Offset -32 bit
      */
-    protected static final short RANDOM_OFFSET = 
+    protected static final short RANDOM_OFFSET =
 	(short) Math.abs ( (new Random()).nextInt() & 0x000000FF) ;
-    
+
     /**
      * Canonical end-point identifier SDES Item.
      *
      */
     private String cname;
-    
+
     /**
      *   Electronic mail Address SDES Item.
      *
      */
     private String email;
-    
+
     /**
      *   Bandwidth Available to the session.
      *
      */
     private double bandwidth;
-    
+
     /**
      *   Payload type for this session.
      *
@@ -84,112 +84,112 @@ public class Session extends java.lang.Object
     // of T.140
     private byte sendPayloadType;
     private byte receivePayloadType;
-    
+
     /**
      *   Synchronization Source identifier for this source.
      *
      */
     protected long ssrc;
-    
+
     /**
      * Total Number of RTP data packets sent out by this source since
      * starting transmission.
      *
      */
     protected long packetCount;
-    
+
     /**
      *   Total Number of payload octets (i.e not including header or padding)
      *   sent out by this source since starting transmission.
      *
      */
     protected long octetCount;
-    
+
     /**
      *   Multicast Address.
      *
      */
     protected InetAddress m_InetAddress;
-    
+
     /**
      *   Reference to the RTP Sender and Receiver Thread.
      *
      */
     protected RTPThreadHandler m_RTPHandler = null;
-    
-    
+
+
     /**
      *   Reference to the RTCP Sender and Receiver Thread handler.
      *
      */
     protected RTCPThreadHandler m_RTCPHandler = null;
-    
+
     /**
      *   The startup time for the application.
      *
      */
     protected long appStartupTime;
-    
+
     /**
      *   Datasource which will be used to as a late-arrival repository. Server
      *   server will send objects out to late-coming clients and late coming
      *   clients will save the received data in this vector.
      */
     protected Vector initializationData = new Vector();
-    
+
     /**
      *   This variable determines whether the RTP loopback packets will
      *   generate events. The user can choose to disable loopback.  Default
      *   is true.
      */
     protected boolean enableLoopBack = true;
-    
+
     /**
      * This variable determines whether Debug information will be printed
      *  or not. Default is false.
      *
      */
     protected boolean debugOutput = false;
-    
+
     /**
      *   Initialize the Random Number Generator.
      *
      */
     private Random rnd = new Random();
-    
+
     /**
      *   Reference to the RTP event action listener.
      *
      */
     private RTP_actionListener m_RTP_actionListener = null;
-    
+
     /**
      *   Reference to the RTCP event action listener.
      *
      */
     private RTCP_actionListener m_RTCP_actionListener = null;
-    
-    
+
+
     /**
      *   The last time an RTCP packet was transmitted.
      */
     protected double timeOfLastRTCPSent = 0;
-    
+
     /**
      *    The current time.
      */
     protected double tc = 0;
-    
+
     /**
      *    The next scheduled transmission time of an RTCP packet.
      */
     protected double tn = 0;
-    
+
     /**
      *   The estimated number of session members at time tp.
      */
     protected int pmembers = 0;
-    
+
     /**
      *   The target RTCP bandwidth, i.e., the total bandwidth that
      *   will be used for RTCP packets by all members of this session, in
@@ -197,58 +197,58 @@ public class Session extends java.lang.Object
      *   application at startup.
      */
     protected double rtcp_bw = 0;
-    
+
     /**
      *   Flag that is true if the application has sent data since the
      *   2nd previous RTCP report was transmitted.
      */
     protected boolean we_sent = false;
-    
+
     /**
      *   The average RTCP packet size sent by this user.
      */
     protected double avg_rtcp_size = 0;
-    
+
     /**
      *   Flag that is true if the application has not yet sent an
      *   RTCP packet.
      */
     protected boolean initial = true;
-    
+
     /**
      *   Average size of the packet constructed by the application
      */
     protected double avg_pkt_sz = 0;
-    
+
     /**
      *   True if session instantiator requested a close.
      */
     protected boolean isByeRequested = false;
-    
+
     /**
      *   Deterministic time interval for next RTCP transmission.
      */
     protected double td = 0;
-    
+
     /**
      *   Randomized time interval for next RTCP transmission.
      */
     protected double t = 0;
-    
+
     /**
      *   Time this source last sent an RTP Packet
      */
     protected double timeOfLastRTPSent = 0;
-    
+
     /**
      * A hastable that stores all the sources subscribed to this multicast
      * group
      */
     protected Hashtable sourceMap;
-    
+
     // IP: Moved these two methods from RTPThreadHandler since it is also used
     //     by RTCPSenderThread
-    
+
     /**
      *   Initialize Random Number Generator
      */
@@ -272,32 +272,32 @@ public class Session extends java.lang.Object
     {
 	// iterate through the sources updating their flags
 	Enumeration SourceCollection  = getSources();
-	
+
 	int n = 0;
-	
+
 	while ( SourceCollection.hasMoreElements() )
 	    {
 		Source s = (Source) SourceCollection.nextElement();
-		
-		
+
+
 		// If Time of last RTPSent < tc - t, then drop them from the
 		// list of active senders
-		
-		if (( s.timeOfLastRTPArrival < this.currentTime() - t*1000) && 
+
+		if (( s.timeOfLastRTPArrival < this.currentTime() - t*1000) &&
 		   s.activeSender ==true)
                     {
                         s.activeSender =false;
 			this.outprintln("Degrading from a sender to member");
-			this.outprintln("SSRC = 0x" + 
+			this.outprintln("SSRC = 0x" +
 					Integer.toHexString((int)s.ssrc));
                         n++;
                     }
-		
-		
+
+
 		// If time of last RTCPSent < tc - 5Td then remove them from
 		// the members list except if its your own SSRC -NOte Td is in
 		// seconds and rest of the times are in milliseconds
-		if ( (s.timeOfLastRTCPArrival < 
+		if ( (s.timeOfLastRTCPArrival <
 		      (this.currentTime() - 5*td*1000) )  &&  s.ssrc != ssrc )
                     {
 
@@ -305,32 +305,32 @@ public class Session extends java.lang.Object
 			//this.outprintln("Td" + Td);
 			//this.outprintln("Removing Source : " + "SSRC = 0x" +
 			//Integer.toHexString((int)s.SSRC));
-			this.outprintln("Removing Source : " + 
-					"SSRC = 0x" + 
+			this.outprintln("Removing Source : " +
+					"SSRC = 0x" +
 					Integer.toHexString((int)s.ssrc));
-			//this.outprintln("Current Time "  + 
+			//this.outprintln("Current Time "  +
 			//this.CurrentTime());
-			//this.outprintln ("s.TimeOfLastRTCPArrival" + 
+			//this.outprintln ("s.TimeOfLastRTCPArrival" +
 			//s.TimeOfLastRTCPArrival);
                         removeSource (s.ssrc);
-			this.outprintln("No. of members" + 
+			this.outprintln("No. of members" +
 					getNumberOfMembers ());
-			this.outprintln("No. of senders" + 
+			this.outprintln("No. of senders" +
 					getNumberOfActiveSenders ());
 			this.outprintln();
 			this.outprintln();
 			this.outprintln();
 			this.outprintln();
-			
+
                         n++;
                     }
 	    }
-	
+
 	// return the number of sources updated
 	return (n);
     }
-    
-    
+
+
     /**
      * The only constructor. Requires CNAME and session bandwidth.
      * Initializes the SSRC to a randomly generated number.
@@ -340,33 +340,33 @@ public class Session extends java.lang.Object
      * @param  bandwidth           Bandwidth available to the session.
      */
     public Session (String multicastGroupIPAddress, double bandwidth, int localPort)
-		    
+
     {
 	this.bandwidth = bandwidth;
 
 	System.out.println("Creating RTP session");
 	cname = "";
 	email = "";
-	
+
 	sourceMap = new Hashtable();
-	
+
 	m_InetAddress = getInetAddress ( multicastGroupIPAddress );
-	
+
 	// Create a new RTP Handler thread (but do not start it yet)
 	m_RTPHandler = new RTPThreadHandler ( m_InetAddress, localPort, this, true);
-	
+
 	// Create a new RTCP Handler thread (but do not start it yet)
 	//  Set the sendto and recvfrom ports
 	m_RTCPHandler = new RTCPThreadHandler ( m_InetAddress, localPort+1, this, true);
-	
+
 	// Initilize session level variables
 	initialize();
-	
+
 	// IP: Removed following line
-	// this.outprintln ( "SSRC: 0x" + Long.toHexString(SSRC) + 
+	// this.outprintln ( "SSRC: 0x" + Long.toHexString(SSRC) +
 	//" CName: " + CNAME );
     }
-    
+
     // IP: Added method
     // Andreas Piirimets: added support for different ports (local
     // and remote)
@@ -401,7 +401,7 @@ public class Session extends java.lang.Object
     {
 	m_RTPHandler.openReceiveSocket(localPort);
     }
-    
+
     /**
      * Sets the RTP payload type for reception.
      *
@@ -423,7 +423,7 @@ public class Session extends java.lang.Object
     public synchronized void setSendPayloadType ( int payloadType ) {
 	sendPayloadType = (byte) payloadType;
     }
-    
+
     /**
      * Gets the RTP payload type for reception.
      *
@@ -445,7 +445,7 @@ public class Session extends java.lang.Object
     public synchronized byte getSendPayloadType ( ) {
 	return sendPayloadType;
     }
-    
+
     /**
      * Set the CNAME.
      *
@@ -454,7 +454,7 @@ public class Session extends java.lang.Object
     public synchronized void setCName ( String cname ) {
 	this.cname = cname;
     }
-    
+
     /**
      * Gets the CNAME.
      *
@@ -463,7 +463,7 @@ public class Session extends java.lang.Object
     public synchronized String getCName () {
 	return cname;
     }
-    
+
     /**
      * Sets the email address.
      *
@@ -472,7 +472,7 @@ public class Session extends java.lang.Object
     public synchronized void setEMail ( String email ) {
 	this.email = email;
     }
-    
+
     /**
      * Gets the email address.
      *
@@ -481,7 +481,7 @@ public class Session extends java.lang.Object
     public synchronized String getEMail ( ) {
 	return email;
     }
-    
+
     /**
      * Starts the RTP thread.
      *
@@ -490,16 +490,16 @@ public class Session extends java.lang.Object
     {
 	m_RTPHandler.start();
     }
-    
+
     /**
      * Stops the RTP thread.
      *
      */
     public synchronized void stopRTPThread( )
     {
-	m_RTPHandler.close();
+	m_RTPHandler.stop();
     }
-    
+
     /**
      * Starts the RTCP Receiver thread.
      *
@@ -509,7 +509,7 @@ public class Session extends java.lang.Object
     {
 	m_RTCPHandler.createAndStartRTCPReceiverThread(localPort);
     }
-    
+
     /**
      * Stops the RTCP Sender thread
      *
@@ -518,19 +518,19 @@ public class Session extends java.lang.Object
     {
 	m_RTCPHandler.stopRTCPReceiverThread();
     }
-    
+
     /**
      * Starts the RTCP Sender thread
      *
      * @param localPort The local port to send RTCP data from
      * @param remotePort The remote port to sent RTCP data to
      */
-    public synchronized void createAndStartRTCPSenderThread(int localPort, 
+    public synchronized void createAndStartRTCPSenderThread(int localPort,
 							    int remotePort)
     {
 	m_RTCPHandler.createAndStartRTCPSenderThread(localPort, remotePort);
     }
-    
+
     /**
      *   Stops the RTCP Sender thread
      *
@@ -539,7 +539,7 @@ public class Session extends java.lang.Object
     {
 	m_RTCPHandler.stopRTCPSenderThread();
     }
-    
+
     /**
      *   Retrieves a source object from the map using the given
      *   SSRC as a key.  If the source does not exist, it is added to the
@@ -553,19 +553,19 @@ public class Session extends java.lang.Object
     public synchronized Source getSource ( long keySSRC )
     {
 	Source s;
-	
+
 	if ( sourceMap.containsKey ( new Long( keySSRC) ) )
 	    s = (Source) sourceMap.get ( new Long( keySSRC) );
 	else    // source doesn't exist in the map, add it
 	    {
 		s = new Source ( keySSRC );
 		addSource ( keySSRC, s);
-		
+
 	    }
-	
+
 	return s;
     }
-    
+
     /**
      * Removes a source from the map.
      *
@@ -578,7 +578,7 @@ public class Session extends java.lang.Object
 	if (sourceMap.get ( new Long(sourceSSRC)) != null )
 	    {
 		sourceMap.remove ( new Long(sourceSSRC) );
-		this.outprintln("Removing Source : " + "SSRC = 0x" + 
+		this.outprintln("Removing Source : " + "SSRC = 0x" +
 				Integer.toHexString((int)sourceSSRC));
 		this.outprintln("No. of members" + getNumberOfMembers ());
 		this.outprintln("No. of senders" + getNumberOfActiveSenders());
@@ -588,10 +588,10 @@ public class Session extends java.lang.Object
 		System.err.println("Trying to remove SSRC which doesnt exist:"+
 				   sourceSSRC );
 	    }
-	
+
 	return 0;
     }
-    
+
     /**
      * Creates and return a InetAddress object.
      *
@@ -621,7 +621,7 @@ public class Session extends java.lang.Object
 
 	return (ia);
     }
-    
+
     /**
      *   Returns the number of members.
      *
@@ -632,7 +632,7 @@ public class Session extends java.lang.Object
 	// Go through the map and return the total number of sources.
 	return sourceMap.size();
     }
-    
+
     /**
      *   Returns the number of active senders.
      *
@@ -646,7 +646,7 @@ public class Session extends java.lang.Object
 	while ( sourceCollection.hasMoreElements() )
 	    {
 		Source s = (Source) sourceCollection.nextElement();
-		
+
 		if ( s.activeSender == true )
 		    {
 			i++;
@@ -654,7 +654,7 @@ public class Session extends java.lang.Object
 	    }
 	return (i);
     }
-    
+
     /**
      * Calculates the next interval, sets the T and Td class level static
      * variables. <br>
@@ -669,10 +669,10 @@ public class Session extends java.lang.Object
     {
 	long td = 0;
 	// Update T and Td ( same as rtcp_interval() function in rfc.
-	
+
 	int members = getNumberOfMembers();
 	int senders = getNumberOfActiveSenders();
-	
+
 	/*
 	 * Minimum average time between RTCP packets from this site (in
 	 * seconds). This time prevents the reports from `clumping' when
@@ -711,9 +711,9 @@ public class Session extends java.lang.Object
 	 * share of the RTCP bandwidth. Otherwise all participants share
 	 * the RTCP bandwidth equally.
 	 */
-	
+
 	n = members;
-	
+
 	if (senders > 0 && senders < members * RTCP_SENDER_BW_FRACTION)
 	    {
 		if ( getMySource().activeSender )
@@ -727,7 +727,7 @@ public class Session extends java.lang.Object
                         n -= senders;
                     }
 	    }
-	
+
 	/*
 	 * The effective number of sites times the average packet size is
 	 * the total number of octets sent when each site sends a report.
@@ -745,12 +745,12 @@ public class Session extends java.lang.Object
 	 * random number uniformly distributed between 0.5*t and 1.5*t.
 	 */
 	double noise = (rnd.nextDouble() + 0.5);
-	
+
 	this.td = t;
 	this.t = t * (double) noise;
 	return t;
     }
-    
+
     /**
      *   Initialize the Session level variables.
      *
@@ -764,26 +764,26 @@ public class Session extends java.lang.Object
 	we_sent = true;
 	rtcp_bw = (double) 0.05 * (double) this.bandwidth;
 	initial = true;
-	avg_pkt_sz = 0; 
+	avg_pkt_sz = 0;
 	// TODO: Set avg_pkt_sz to the size of the first packet generated by
 	//       app
 
 	ssrc = (long) Math.abs( rnd.nextInt() ) ;
-	
+
 	packetCount = 0;
 	octetCount = 0;
-	
-	
+
+
 	// Set the next transmission time to the interval
 	tn = t;
-	
+
 	// Add self as a source object into the SSRC table maintained by the
 	// session
 	this.addSource ( this.ssrc, new Source( this.ssrc) );
-	
+
 	return (0);
     }
-    
+
     /**
      *   Returns a self source object.
      *
@@ -793,9 +793,9 @@ public class Session extends java.lang.Object
     {
 	Source s = (Source) sourceMap.get ( new Long( ssrc ) );
 	return s;
-	
+
     }
-    
+
     /**
      * Adds an SSRC into the table, if SSRC Exists, error code -1
      * is returned.
@@ -807,7 +807,7 @@ public class Session extends java.lang.Object
      */
     public int addSource ( long newSSRC , Source src)
     {
-	
+
 	if ( sourceMap.containsKey ( new Long ( newSSRC) ) )
 	    {
 		return -1;
@@ -819,11 +819,11 @@ public class Session extends java.lang.Object
 				Integer.toHexString((int)newSSRC));
 		this.outprintln("No. of members" + getNumberOfMembers ());
 		this.outprintln("No. of senders" + getNumberOfActiveSenders());
-		
+
 	    }
 	return 1;
     }
-    
+
     /**
      *   Returns all active senders as an iterable enumeration.
      *
@@ -832,11 +832,11 @@ public class Session extends java.lang.Object
     public synchronized Enumeration getActiveSenders ()
     {
 	Enumeration enumAllMembers = sourceMap.elements();
-	
+
 	Vector vectActiveSenders = new Vector();
-	
+
 	Source s;
-	
+
 	// Go through this enumeration and for each source
 	// if it is and active sender, add into a temp vector
 	while ( enumAllMembers.hasMoreElements() )
@@ -845,11 +845,11 @@ public class Session extends java.lang.Object
 		if ( s.activeSender )
 		    vectActiveSenders.addElement ( s );
 	    }
-	
+
 	// Return the enumeration of the temp vector.
 	return ( vectActiveSenders.elements() );
     }
-    
+
     /**
      *   Return an iterable enumeration of all sources
      *   contained in the Map.
@@ -860,7 +860,7 @@ public class Session extends java.lang.Object
     {
 	return sourceMap.elements();
     }
-    
+
     /**
      *   Returns current time from the Date().getTime() function.
      *
@@ -871,7 +871,7 @@ public class Session extends java.lang.Object
 	tc = (new Date()).getTime();
 	return (long)tc;
     }
-    
+
     /**
      *   Function removes all sources from the members table (except self).
      *   Returns number of sources removed.
@@ -881,26 +881,26 @@ public class Session extends java.lang.Object
     public synchronized int removeAllSources()
     {
 	Enumeration sourceCollection  = getSources();
-	
+
 	int n = 0;
-	
+
 	while ( sourceCollection.hasMoreElements() )
 	    {
 		Source s = (Source) sourceCollection.nextElement();
-		
+
 		if ( s.ssrc != ssrc )
                     {
                         removeSource ( s.ssrc );
                         n++;
                     }
 	    }
-	
+
 	pmembers = 1;
 	calculateInterval();
-	
+
 	return (n);
     }
-    
+
     /**
      *   Register RTCP action listener.
      *   The instantiators of the session who are interested
@@ -912,12 +912,12 @@ public class Session extends java.lang.Object
      *   @param listener who implements the RTCP_actionListener interface and
      *           will be the one to which all RTCP actions will be posted.
      */
-    public synchronized void addRTCP_actionListener 
+    public synchronized void addRTCP_actionListener
 	(RTCP_actionListener listener)
     {
 	m_RTCP_actionListener = listener;
     }
-    
+
     /**
      *   Register RTP action listener.
      *   The instantiators of the session must implement
@@ -927,12 +927,12 @@ public class Session extends java.lang.Object
      *   @param listener who implements the RTP_actionListener interface and
      *           will be the one to which all RTP actions will be posted.
      */
-    public synchronized void addRTP_actionListener 
+    public synchronized void addRTP_actionListener
 	( RTP_actionListener listener )
     {
 	m_RTP_actionListener = listener;
     }
-    
+
     /**
      *   Post the RTCP RR packet to the actionListener. (if any
      *   is registered)
@@ -944,7 +944,7 @@ public class Session extends java.lang.Object
 	if ( m_RTCP_actionListener != null )
 	    m_RTCP_actionListener.handleRTCPEvent ( rrpkt );
     }
-    
+
     /**
      *   Function posts the RTCP SR packet to the actionListener. (if any
      *   is registered)
@@ -955,9 +955,9 @@ public class Session extends java.lang.Object
     {
 	if ( m_RTCP_actionListener != null )
 	    m_RTCP_actionListener.handleRTCPEvent ( srpkt );
-	
+
     }
-    
+
     /**
      *   Function posts the SDES packet to the actionListener. (if any
      *   is registered)
@@ -969,7 +969,7 @@ public class Session extends java.lang.Object
 	if ( m_RTCP_actionListener != null )
 	    m_RTCP_actionListener.handleRTCPEvent ( sdespkt );
     }
-    
+
     /**
      *   Function posts the RTCP BYE packet to the actionListener. (if any
      *   is registered)
@@ -981,7 +981,7 @@ public class Session extends java.lang.Object
 	if ( m_RTCP_actionListener != null )
 	    m_RTCP_actionListener.handleRTCPEvent ( byepkt );
     }
-    
+
     /**
      *   Function posts the RTP packet to the actionListener. (if any
      *   is registered).
@@ -995,7 +995,7 @@ public class Session extends java.lang.Object
 	else
 	    System.err.println ("ERROR: No RTP Action Listener registered :(");
     }
-    
+
     /**
      * Print a newline. Provided to enable the
      * debug console print messages in the source code. By setting the
@@ -1007,8 +1007,8 @@ public class Session extends java.lang.Object
     public synchronized void outprintln () {
 	if ( debugOutput ) System.out.println ();
     }
-    
-    
+
+
     /**
      * Print a string. Provided to enable the
      * debug console print messages in the source code.  By setting the
@@ -1021,7 +1021,7 @@ public class Session extends java.lang.Object
     public synchronized void outprintln ( String s ) {
 	if ( debugOutput ) System.out.println ( s );
     }
-    
+
     /**
      * Print a string. Provided to enable the
      * debug console print messages in the source code.  By setting the
@@ -1034,7 +1034,7 @@ public class Session extends java.lang.Object
     public synchronized void outprint ( String s ) {
 	if ( debugOutput ) System.out.print ( s );
     }
-    
+
     /**
      * Sends an RTP Packet.
      *
@@ -1045,11 +1045,11 @@ public class Session extends java.lang.Object
     {
 	if ( m_RTPHandler != null )
 	    m_RTPHandler.sendPacket( packet );
-	else    
+	else
 	    System.err.println ( "ERROR: Cannot send RTP data if " +
 				 " RTPHandler not instantiated.");
     }
-    
+
     /**
      * Starts the threads. Starts the RTCP sender and receiver threads and the
      * RTP receiver thread.  This function calls the thread startup functions
@@ -1059,7 +1059,7 @@ public class Session extends java.lang.Object
      * StartRTCPSenderThread(); <br>
      * StartRTCPReceiverThread(); <br>
      * StartRTPReceiverThread(); <br>
-     * 
+     *
      * @param rtpLocalPort The local RTP port
      * @param rtcpLocalPort The local RTCP port
      * @param rtpRemotePort The remote RTP port
@@ -1067,17 +1067,17 @@ public class Session extends java.lang.Object
      *
      * @see Session#startRTPThread
      */
-    public void start (MulticastSocket socket,int rtpLocalPort, int rtcpLocalPort, int rtpRemotePort, 
+    public void start (MulticastSocket socket,int rtpLocalPort, int rtcpLocalPort, int rtpRemotePort,
 		       int rtcpRemotePort)
     {
 	createAndStartRTCPSenderThread(rtcpLocalPort, rtcpRemotePort);
 	createAndStartRTCPReceiverThread(rtcpLocalPort);
 	openRTPReceiveSocket(rtpLocalPort);
-	
+
 	openRTPTransmitSocket(rtpLocalPort,rtpRemotePort);
 	startRTPThread();
     }
-    
+
     /**
      * Stops the session and terminates the RTCP sending loop by forcing a bye
      * packet.
@@ -1090,9 +1090,9 @@ public class Session extends java.lang.Object
 	stopRTCPReceiverThread();
 	// IP: Added following method call so that send socket is
 	// properly closed
-	m_RTPHandler.close();
+	m_RTPHandler.stop();
 	stopRTPThread();
     }
-    
+
 }
 

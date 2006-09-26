@@ -1,6 +1,6 @@
-/* 
+/*
  * Copyright (C) 2004  University of Wisconsin-Madison and Omnitor AB
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -43,10 +43,10 @@ import se.omnitor.protocol.rtp.text.RtpTextBuffer;
  * @author Ingemar Persson, Omnitor AB
  * @author Andreas Piirimets, Omnitor AB
  */
-public class RtpTextReceiver implements Runnable, 
-					RTP_actionListener, 
+public class RtpTextReceiver implements Runnable,
+					RTP_actionListener,
 					RTCP_actionListener {
-    
+
     private StateThread thisThread = null;
     private RtpTextDePacketizer textDePacketizer;
     private Session rtpSession;
@@ -69,7 +69,7 @@ public class RtpTextReceiver implements Runnable,
     private se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter redFilter;
     //EZ_ FIX BELOW
     private boolean redT140FlagIncoming = false;
-    
+
     /**
      * Initializes the RTP text receiver and starts the reception thread.
      *
@@ -82,9 +82,9 @@ public class RtpTextReceiver implements Runnable,
      */
     public RtpTextReceiver(Session rtpSession,
 			   String ipAddress,
-                           int localPort, 
-			   boolean redFlagIncoming, 
-			   int t140PayloadType, 
+                           int localPort,
+			   boolean redFlagIncoming,
+			   int t140PayloadType,
 			   int redPayloadType,
 			   FifoBuffer dataBuffer) {
 
@@ -102,7 +102,7 @@ public class RtpTextReceiver implements Runnable,
 	//DEBUG
 	System.out.println("redFlagIncoming = " + redFlagIncoming);
 
-	textDePacketizer = new RtpTextDePacketizer(t140PayloadType, 
+	textDePacketizer = new RtpTextDePacketizer(t140PayloadType,
 						   redPayloadType,
 						   redFlagIncoming);
 
@@ -117,10 +117,10 @@ public class RtpTextReceiver implements Runnable,
 	remoteReceiverIsReady = false;
 	localReceiverIsReady = false;
 
-	
+
 	//EZ: T140 redundancy init
 	//if(redT140FlagIncoming) {
-	redFilter = 
+	redFilter =
 	    new se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter();
 	    //}
     }
@@ -144,7 +144,7 @@ public class RtpTextReceiver implements Runnable,
     {
 	logger.finest("Starting text receiver");
 
-        thisThread = new StateThread(this);
+        thisThread = new StateThread(this, "RTP Text Receiver");
         thisThread.start();
     }
 
@@ -203,7 +203,7 @@ public class RtpTextReceiver implements Runnable,
 	    rtpSession.stopRTCPReceiverThread();
 	}
     }
-    
+
     /**
      * Gets the local RTP port.
      *
@@ -234,7 +234,7 @@ public class RtpTextReceiver implements Runnable,
 	inBuffer.setLength(rtpPacket.getPayloadData().length);
 	inBuffer.setOffset(0);
 	inBuffer.setSsrc(rtpPacket.getSsrc());
-	
+
         textDePacketizer.decode(inBuffer, outBuffer);
 
 	rtpPacket.setPayloadData(null);
@@ -245,7 +245,7 @@ public class RtpTextReceiver implements Runnable,
 
 	//EZ: T140 redundancy filter
 	byte[] data = redFilter.filterInput(datap);
-	
+
 	//DEBUG
 	//System.out.println("After filter: '" + new String(data) + "'");
 
@@ -267,21 +267,21 @@ public class RtpTextReceiver implements Runnable,
 	remoteReceiverIsReady = true;
 	/*
         logger.finest("\n**** ActionListener RTCP RR Packet: *****\n" +
-		      "SSRC = " + Long.toHexString(RRpkt.SenderSSRC) + 
+		      "SSRC = " + Long.toHexString(RRpkt.SenderSSRC) +
 		      "\n" +
-		      "ReportBlock = " + RRpkt.containsReportBlock + 
+		      "ReportBlock = " + RRpkt.containsReportBlock +
 		      "\n" +
-		      "FractionLost = " + RRpkt.ReportBlock.FractionLost + 
+		      "FractionLost = " + RRpkt.ReportBlock.FractionLost +
 		      "\n"
-		      + "CumPktsLost = " + 
+		      + "CumPktsLost = " +
 		      RRpkt.ReportBlock.CumulativeNumberOfPacketsLost + "\n"
-		      + "ExtHighSqRcvd = " +  
+		      + "ExtHighSqRcvd = " +
 		      RRpkt.ReportBlock.ExtendedHighestSequenceNumberReceived
 		      + "\n"
-		      + "IntJitter = " + 
+		      + "IntJitter = " +
 		      RRpkt.ReportBlock.InterarrivalJitter   + "\n"
 		      + "LastSR = " + RRpkt.ReportBlock.LastSR + "\n"
-		      + "Delay_LastSR = " +  RRpkt.ReportBlock.Delay_LastSR + 
+		      + "Delay_LastSR = " +  RRpkt.ReportBlock.Delay_LastSR +
 		      "\n" );
 	*/
     }
@@ -294,35 +294,35 @@ public class RtpTextReceiver implements Runnable,
     public void handleRTCPEvent ( RTCPSenderReportPacket srpkt) {
 	/*
 	logger.finest ("\n**** ActionListener RTCP SR Packet: *****\n"
-		       + "SSRC = " + 
+		       + "SSRC = " +
 		       Long.toHexString(SRpkt.SenderSSRC) + "\n"
-		       + "SenderOctetCount:" + 
+		       + "SenderOctetCount:" +
 		       SRpkt.SenderInfo.SenderOctetCount + "\n"
-		       + " SenderPacketCount:" +  
+		       + " SenderPacketCount:" +
 		       SRpkt.SenderInfo.SenderPacketCount + "\n"
-		       + "RTPTimeStamp" +  
+		       + "RTPTimeStamp" +
 		       SRpkt.SenderInfo.RTPTimeStamp + "\n"
-		       + "NTPTimeStampLeastSignificant" + 
+		       + "NTPTimeStampLeastSignificant" +
 		       SRpkt.SenderInfo.NTPTimeStampLeastSignificant + "\n"
-		       +  "NTPTimeStampMostSignificant" + 
+		       +  "NTPTimeStampMostSignificant" +
 		       SRpkt.SenderInfo.NTPTimeStampMostSignificant + "\n"
-		       + "ReportBlock = " + 
+		       + "ReportBlock = " +
 		       SRpkt.containsReportBlock + "\n" );
 
         if ( SRpkt.containsReportBlock )
-            logger.finest ("FractionLost = " + 
+            logger.finest ("FractionLost = " +
 			   SRpkt.ReportBlock.FractionLost  + "\n"
-			   +  "CumPktsLost = " + 
-			   SRpkt.ReportBlock.CumulativeNumberOfPacketsLost + 
+			   +  "CumPktsLost = " +
+			   SRpkt.ReportBlock.CumulativeNumberOfPacketsLost +
 			   "\n"
-			   +  "ExtHighSqRcvd = " +  
+			   +  "ExtHighSqRcvd = " +
 			   SRpkt.ReportBlock.
 			   ExtendedHighestSequenceNumberReceived  + "\n"
-			   +  "IntJitter = " + 
+			   +  "IntJitter = " +
 			   SRpkt.ReportBlock.InterarrivalJitter   + "\n"
-			   +  "LastSR = " + 
+			   +  "LastSR = " +
 			   SRpkt.ReportBlock.LastSR + "\n"
-			   +  "Delay_LastSR = " +  
+			   +  "Delay_LastSR = " +
 			   SRpkt.ReportBlock.Delay_LastSR  + "\n"
 			   );
 	*/
@@ -337,7 +337,7 @@ public class RtpTextReceiver implements Runnable,
 	/*
       logger.finest (    "\n**** ActionListener RTCP SDES: *****\n"
                                 + "SDES Type: " + sdespkt.SDESItem.Type + "\n"
-                                + "SDES Value: " + sdespkt.SDESItem.Value + 
+                                + "SDES Value: " + sdespkt.SDESItem.Value +
                                 "\n"
                                 + "**************************************\n");
 	*/
@@ -352,7 +352,7 @@ public class RtpTextReceiver implements Runnable,
 	/*
         logger.finest (    "\n**** ActionListener RTCP BYE: *****\n"
                                 + "BYE SSRC: " + byepkt.SSRC + "\n"
-                                + "REason For Leaving " + 
+                                + "REason For Leaving " +
                                 byepkt.ReasonForLeaving + "\n"
                                 + "**************************************\n");
 	*/

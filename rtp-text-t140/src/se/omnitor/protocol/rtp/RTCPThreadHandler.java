@@ -1,6 +1,6 @@
-/* 
+/*
  * Copyright (C) 2004  University of Wisconsin-Madison and Omnitor AB
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -35,22 +35,22 @@ public class RTCPThreadHandler extends java.lang.Object
      *
      */
     private RTCPReceiverThread rtcpReceiverThread;
-    
+
     /**
      *   Reference to the RTCP Sender Thread
      *
      */
     private RTCPSenderThread rtcpSenderThread;
-    
+
     // IP: Added following chunk
     Session rtpSession;
     InetAddress multicastGroupIPAddress;
-    
+
     //private SymmetricMulticastSocket socket;
     private java.net.MulticastSocket socket;
     private boolean symmetric;
     private int localPort;
-    
+
     /**
      * Constructor creates the sender and receiver
      * threads. (Does not start the threads)
@@ -67,9 +67,9 @@ public class RTCPThreadHandler extends java.lang.Object
         this.rtpSession = rtpSession;
 	symmetric=false;
 	localPort=0;
-	
+
     }
-    
+
     public RTCPThreadHandler (  InetAddress multicastGroupIPAddress,
 				int localPort,
                                 Session rtpSession,
@@ -80,43 +80,43 @@ public class RTCPThreadHandler extends java.lang.Object
 	this.localPort = localPort;
         this.rtpSession = rtpSession;
 	this.symmetric=symmetric;
-	
+
 	try {
-	    socket = new java.net.MulticastSocket(localPort); 
+	    socket = new java.net.MulticastSocket(localPort);
 	} catch (Exception e) {
 	    System.err.println("RTPCHandler, error creating socket. "+e);
 	}
     }
-    
+
     /**
      * Starts the RTCP Sender thread.
      *
      * @param rtcpSendFromPort The RTCP port to send data from
      * @param rtcpGroupPort Port for multicast group (for receiving)
      */
-    public void createAndStartRTCPSenderThread(int rtcpSendFromPort, 
+    public void createAndStartRTCPSenderThread(int rtcpSendFromPort,
 					       int rtcpGroupPort)
     {
         // create an rtcpSender thread
 	if(symmetric) {
-	    rtcpSenderThread = 
-		new RTCPSenderThread ( multicastGroupIPAddress, 
-				       rtcpSendFromPort, 
-				       rtcpGroupPort, 
+	    rtcpSenderThread =
+		new RTCPSenderThread ( multicastGroupIPAddress,
+				       rtcpSendFromPort,
+				       rtcpGroupPort,
 				       rtpSession,
 				       socket);
 	} else {
-	    rtcpSenderThread = 
-		new RTCPSenderThread ( multicastGroupIPAddress, 
-				       rtcpSendFromPort, 
-				       rtcpGroupPort, 
+	    rtcpSenderThread =
+		new RTCPSenderThread ( multicastGroupIPAddress,
+				       rtcpSendFromPort,
+				       rtcpGroupPort,
 				       rtpSession );
 	}
-	
+
         // Start thread
         rtcpSenderThread.start();
     }
-    
+
     /**
      * Stops the receiver thread
      *
@@ -125,7 +125,7 @@ public class RTCPThreadHandler extends java.lang.Object
     {
         rtcpReceiverThread.stop();
     }
-    
+
     /**
      * Starts the RTCP Receiver thread.
      *
@@ -136,22 +136,22 @@ public class RTCPThreadHandler extends java.lang.Object
     {
         // create an rtcpReceiver thread
 	if(symmetric) {
-	    rtcpReceiverThread = 
+	    rtcpReceiverThread =
 		new RTCPReceiverThread ( multicastGroupIPAddress,
-					 rtcpGroupPort, 
+					 rtcpGroupPort,
 					 rtpSession,
 					 socket);
 	} else {
-	    rtcpReceiverThread = 
+	    rtcpReceiverThread =
 		new RTCPReceiverThread ( multicastGroupIPAddress,
-					 rtcpGroupPort, 
+					 rtcpGroupPort,
 					 rtpSession );
 	}
 
         // Start thread
         rtcpReceiverThread.start();
     }
-    
+
     /**
      *   Interrupts a running RTCP sender thread.  This will
      *   cause the sender to send BYE packet and finally terminate.
@@ -159,7 +159,9 @@ public class RTCPThreadHandler extends java.lang.Object
      */
     public synchronized void stopRTCPSenderThread()
     {
-        rtcpSenderThread.interrupt();
-	rtcpSenderThread = null;
+        if (rtcpSenderThread != null) {
+            rtcpSenderThread.interrupt();
+            rtcpSenderThread = null;
+        }
     }
 }

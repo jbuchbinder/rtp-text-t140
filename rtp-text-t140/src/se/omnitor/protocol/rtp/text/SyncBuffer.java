@@ -111,7 +111,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 	if (!running) {
 	    running = true;
 
-	    thread = new Thread(this);
+	    thread = new Thread(this, "SyncBuffer");
 	    thread.start();
 	}
 
