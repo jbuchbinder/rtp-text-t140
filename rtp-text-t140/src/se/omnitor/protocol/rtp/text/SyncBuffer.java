@@ -354,6 +354,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 		}
 	    }
 	    catch (InterruptedException ie) {
+            	logger.logp(Level.WARNING, CLASS_NAME, METHOD, "Thread was interrupted, possible cause of to many BOM", ie);
 	    }
 
             // If nothing is sent in 55 seconds, send a zero width no break
