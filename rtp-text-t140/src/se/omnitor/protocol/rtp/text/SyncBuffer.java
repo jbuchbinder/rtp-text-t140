@@ -348,13 +348,13 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 	    try {
 		synchronized (dataSetSemaphore) {
 
-		    if (dataToSend.length == 0) {
+		    if (dataWaiting.length == 0) {
 			dataSetSemaphore.wait(55000);
 		    }
 		}
 	    }
 	    catch (InterruptedException ie) {
-            	logger.logp(Level.WARNING, CLASS_NAME, METHOD, "Thread was interrupted, possible cause of to many BOM", ie);
+            	logger.logp(Level.FINE, CLASS_NAME, METHOD, "Thread was interrupted, possible cause of hangup", ie);
 	    }
 
             // If nothing is sent in 55 seconds, send a zero width no break
