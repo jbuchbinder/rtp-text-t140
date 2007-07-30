@@ -1080,7 +1080,7 @@ public class Session extends java.lang.Object
 
     /**
      * Stops the session and terminates the RTCP sending loop by forcing a bye
-     * packet.
+     * packet.<
      *
      * @see Session#stopRTCPSenderThread
      */

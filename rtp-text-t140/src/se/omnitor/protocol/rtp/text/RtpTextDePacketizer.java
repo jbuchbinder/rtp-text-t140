@@ -1,13 +1,13 @@
 /*
  * RTP text/t140 Library
- * 
+ *
  * Copyright (C) 2004 Board of Regents of the University of Wisconsin System
  * (Univ. of Wisconsin-Madison, Trace R&D Center)
  * Copyright (C) 2004 Omnitor AB
  *
  * This software was developed with support from the National Institute on
  * Disability and Rehabilitation Research, US Dept of Education under Grant
- * # H133E990006 and H133E040014  
+ * # H133E990006 and H133E040014
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,7 @@
  * along with this library; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Please send a copy of any improved versions of the library to: 
+ * Please send a copy of any improved versions of the library to:
  * Gunnar Hellstrom, Omnitor AB, Renathvagen 2, SE 121 37 Johanneshov, SWEDEN
  * Gregg Vanderheiden, Trace Center, U of Wisconsin, Madison, Wi 53706
  *
@@ -56,7 +56,7 @@ public class RtpTextDePacketizer {
      * Masks out the upper part of the block length from the header.
      */
     public static final int RTP_DEPACK_BLOCKLEN_UPPER_MASK = 0x3  << 0;
- 
+
     /**
      * Masks out the lower part of the block lenght from the header.
      */
@@ -66,23 +66,23 @@ public class RtpTextDePacketizer {
      * Can be used to sign an unsigned value etc.
      */
     public static final int SIGNED_MASK                    = 0x80;
-    
+
     //The sequence number of the last received packet.
     private long lastSequenceNumber    = 0;
-    
+
     //The sequence number of the last output packet
     private long lastOutput            = 0;
-    
+
     private Hashtable missingPackets  = null;
     private Hashtable receivedPackets = null;
- 
+
     private int numberOfMissingPackets = 0;
 
     private int redundantGenerations = 0;
     private boolean redFlagIncoming = false;
 
     private int t140PayloadType;
-    private byte signedT140PayloadType; 
+    private byte signedT140PayloadType;
 
     private Timer timer = null;
     private LossTimerTask task = null;
@@ -100,21 +100,21 @@ public class RtpTextDePacketizer {
      * @param t140PayloadType Payload type to use.
      * @param redFlagIncoming Indicates if redundancy is on or off.
      */
-    public RtpTextDePacketizer(int t140PayloadType, int redPt, 
+    public RtpTextDePacketizer(int t140PayloadType, int redPt,
 			       boolean redFlagIncoming) {
 
 	logger = Logger.getLogger("se.omnitor.protocol.rtp.text");
 
         this.t140PayloadType = t140PayloadType;
         this.redFlagIncoming = redFlagIncoming;
-    
+
         timer = new Timer();
 
         signedT140PayloadType = (byte)((byte)t140PayloadType | (byte)0x80);
 
         missingPackets  = new Hashtable(10);
         receivedPackets = new Hashtable(30);
-    
+
     }
 
     /**
@@ -128,7 +128,7 @@ public class RtpTextDePacketizer {
 
     /**
      * Removes excess zeros that are received in the input buffer.
-     * 
+     *
      * @param in The received data
      *
      * @return Received data without excess zeros.
@@ -138,7 +138,7 @@ public class RtpTextDePacketizer {
         int start=0;
         int end=in.length;
         boolean lastData=true;
-    
+
         //Find start of data
         int i=0;
 	boolean foundData = false;
@@ -182,7 +182,7 @@ public class RtpTextDePacketizer {
         filtered = new byte[length];
 
 	java.lang.System.arraycopy(in,start,filtered,0,length);
-    
+
         return filtered;
     }
 
@@ -196,7 +196,7 @@ public class RtpTextDePacketizer {
      * @return 0 if parse failure
      * @return -1 packet received out of order.
      */
-    public synchronized int decode(RtpTextBuffer inputBuffer, 
+    public synchronized int decode(RtpTextBuffer inputBuffer,
 				   RtpTextBuffer outputBuffer) {
 
         long currentSequenceNumber = inputBuffer.getSequenceNumber();
@@ -226,24 +226,24 @@ public class RtpTextDePacketizer {
 	    redundantGenerations=0;
 	}
 
-	
+
         //First packet received
         if (firstPacket) {
             firstPacket = false;
             lastSequenceNumber = currentSequenceNumber - 1;
             lastOutput = lastSequenceNumber;
 	    ssrc = inputBuffer.getSsrc();
-        } 
+        }
 
         //Check for sequencenumber wraparound
-        else if (lastSequenceNumber > 
+        else if (lastSequenceNumber >
                  TextConstants.MAX_SEQUENCE_NUMBER-
-                 TextConstants.WRAP_AROUND_MARGIN && 
-                 currentSequenceNumber < 
+                 TextConstants.WRAP_AROUND_MARGIN &&
+                 currentSequenceNumber <
                  TextConstants.WRAP_AROUND_MARGIN) {
 
             //No packets lost
-            if (lastSequenceNumber == TextConstants.MAX_SEQUENCE_NUMBER && 
+            if (lastSequenceNumber == TextConstants.MAX_SEQUENCE_NUMBER &&
                 currentSequenceNumber==0) {
                 lastSequenceNumber=currentSequenceNumber-1;
             }
@@ -260,27 +260,27 @@ public class RtpTextDePacketizer {
 	    outputBuffer.setData(new byte[0]);
 	    return 1;
 	}
-    
+
         //Packet received in order.
         if (currentSequenceNumber == (lastSequenceNumber+1)) {
-        
+
             byte[] d = getData(0, data);
             receivedPackets.put(new Long(currentSequenceNumber),(byte [])d);
             d=(byte[])receivedPackets.get(new Long(currentSequenceNumber));
-            lastSequenceNumber = currentSequenceNumber; 
- 
+            lastSequenceNumber = currentSequenceNumber;
+
         }
 
         //New packet(s) missing.
         else if ((currentSequenceNumber-lastSequenceNumber)>0) {
             receivedPackets.put(new Long(currentSequenceNumber),
-                                getData(0,data));    
+                                getData(0,data));
             for (int i=(int)(currentSequenceNumber - lastSequenceNumber)-1;
                  i>0;
                  i--) {
                 if (!(missingPackets.containsKey(
                       new Long(currentSequenceNumber-i)))) {
-  
+
                     LossTimerTask ltt =
 			new LossTimerTask(currentSequenceNumber-i, this);
                     if (redFlagIncoming) {
@@ -293,13 +293,13 @@ public class RtpTextDePacketizer {
                     missingPackets.put(new Long(currentSequenceNumber-i),
                                        new Long(currentTimeStamp));
                 }
-            }     
+            }
             lastSequenceNumber = currentSequenceNumber;
         }
 
         //Packet received out of order
         else {
-        
+
         }
 
         //Check if received packet is missing.
@@ -308,14 +308,14 @@ public class RtpTextDePacketizer {
         for (int i=0;i<=redundantGenerations;i++) {
             receivedMissingPacket(currentSequenceNumber-i,i,data);
         }
-    
+
         //Output data if possible.
         //Get packets in order from last output.
         boolean rKey=receivedPackets.containsKey(new Long(lastOutput+1));
         boolean mKey=missingPackets.containsKey(new Long(lastOutput+1));
 	byte[] lastData = null;
         while (rKey) {// || !mKey) {
-        
+
             //Get packets that are ready
             if (rKey) {
                 oldOutData=outData;
@@ -323,7 +323,7 @@ public class RtpTextDePacketizer {
 
 		if (!(lastData == TextConstants.LOSS_CHAR &&
 		      newData == TextConstants.LOSS_CHAR)) {
-		    
+
 		    outData   =new byte[oldOutData.length + newData.length];
 		    System.arraycopy(oldOutData,
 				     0,
@@ -345,8 +345,8 @@ public class RtpTextDePacketizer {
 
             }
         }
-        
-        
+
+
 
         //Receives the T.140 defined character 0xFEFF
         //ZERO_WIDTH_BREAK_SPACE
@@ -355,7 +355,7 @@ public class RtpTextDePacketizer {
             if(outData[k]==TextConstants.ZERO_WIDTH_NO_BREAK_SPACE[0] &&
                k<(outData.length-1) &&
                outData[k+1]==TextConstants.ZERO_WIDTH_NO_BREAK_SPACE[1]) {
-                System.out.println("ZERO_WIDTH_NO_BREAK_SPACE RECEIVED");            
+                System.out.println("ZERO_WIDTH_NO_BREAK_SPACE RECEIVED");
                 byte[] bTemp = outData;
                 outData = new byte[bTemp.length-2];
                 int outInd=0;
@@ -365,7 +365,7 @@ public class RtpTextDePacketizer {
 		    bTemp[l]!=Te //filterZeros((byte[])inputBuffer.getData());	xtConstants.ZERO_WIDTH_NO_BREAK_SPACE[1]) {
 		    outData[outInd] = bTemp[l];
 		    outInd++;
-                        }                    
+                        }
                     }
                 }
                 break;
@@ -374,7 +374,7 @@ public class RtpTextDePacketizer {
             TextConstants.printDebug(""+outData[k],4);
             }*/
 
-        outputBuffer.setData(outData);    
+        outputBuffer.setData(outData);
         data=null;
 
 	//Make sure the buffer is cleared!
@@ -388,9 +388,9 @@ public class RtpTextDePacketizer {
 
     /**
      * Find out how many redundantGenerations there are in the received packet.
-     * 
+     *
      * @param data The packet.
-     * 
+     *
      * @return The number of redundant generations in this packet.
      */
     public int getRedundantGenerations(byte[] data) {
@@ -420,8 +420,8 @@ public class RtpTextDePacketizer {
      *
      * @param generation The generation of data to be extracted.
      * @param data       The packet.
-     * 
-     * @return The extracted data. null if invalid generation. 
+     *
+     * @return The extracted data. null if invalid generation.
      */
     private byte[] getData(int generation,byte[] data) {
         byte blockLengthByteHigh = 0x00;
@@ -430,36 +430,36 @@ public class RtpTextDePacketizer {
         long blockLength         = 0;
 
         byte[] extractedData     = null;
-    
+
         long[] blockLengths      = new long[redundantGenerations];
         int tempGeneration       = 0;
-        
+
 
         //No redundancy
 
         //Parse the length of the individual blocks.
         for (int i=0;i<redundantGenerations;i++) {
-	    blockLengthByteHigh = 
+	    blockLengthByteHigh =
 		data[TextConstants.REDUNDANT_HEADER_SIZE*i+2];
             blockLengthByteLow =
 		data[TextConstants.REDUNDANT_HEADER_SIZE*i+3];
-            blockLength = (long)(((blockLengthByteHigh & 
+            blockLength = (long)(((blockLengthByteHigh &
 				   RTP_DEPACK_BLOCKLEN_UPPER_MASK) << 8)
-				 | (blockLengthByteLow & 
+				 | (blockLengthByteLow &
 				    RTP_DEPACK_BLOCKLEN_LOWER_MASK));
-            blockLengths[i] = blockLength; 
-	    
+            blockLengths[i] = blockLength;
+
         }
 
         //Each generation takes 4 bytes header space + end header 1 byte.
         if (redundantGenerations>0) {
-            startLength = redundantGenerations* 
+            startLength = redundantGenerations*
                 TextConstants.REDUNDANT_HEADER_SIZE+
                 TextConstants.PRIMARY_HEADER_SIZE;
         }
 
 	//EZ 041114: Removed below, easier to use the stored
-	// blocklengths above. 
+	// blocklengths above.
         //Get the correct startpoint for data.
         //tempGeneration=redundantGenerations-generation;
 
@@ -467,9 +467,9 @@ public class RtpTextDePacketizer {
         /*for (int i=0;i<tempGeneration;i++) {
             blockLengthByteHigh=data[TextConstants.REDUNDANT_HEADER_SIZE*(i)+2];
             blockLengthByteLow =data[TextConstants.REDUNDANT_HEADER_SIZE*(i)+3];
-            startLength += (long)(((blockLengthByteHigh & 
+            startLength += (long)(((blockLengthByteHigh &
                                     RTP_DEPACK_BLOCKLEN_UPPER_MASK)<<8 ) |
-                                  (blockLengthByteLow & 
+                                  (blockLengthByteLow &
                                    RTP_DEPACK_BLOCKLEN_LOWER_MASK)) ;
 				   }*/
 
@@ -487,10 +487,10 @@ public class RtpTextDePacketizer {
                              extractedData,
                              0,
                              (data.length-(int)primaryStart));
-	    
+
             return extractedData;
-        }	
-	
+        }
+
 	//EZ: Removed below. Use the stored blocklengths.
         //Get length of wanted block.
         /*blockLengthByteHigh = data[TextConstants.REDUNDANT_HEADER_SIZE*
@@ -501,7 +501,7 @@ public class RtpTextDePacketizer {
                                        RTP_DEPACK_BLOCKLEN_UPPER_MASK) << 8) |
                                      (blockLengthByteLow &
 				     RTP_DEPACK_BLOCKLEN_LOWER_MASK));*/
-	
+
 	//EZ 041114: Get the blocklength of the redundant generation
 	blockLength = blockLengths[redundantGenerations-generation];
 	for (int i=0;i<(redundantGenerations-generation);i++)
@@ -544,7 +544,7 @@ public class RtpTextDePacketizer {
 
     /**
      * Function to handle the reception of missingpackets.
-     * 
+     *
      * @param sequenceNumber The sequenceNumber of the recieved packet.
      * @param i Redundant generation of the received packet that contains the
      * desired data.
@@ -559,7 +559,7 @@ public class RtpTextDePacketizer {
                                     (byte[])getData((i),
                                                     data));
             }
-        }            
+        }
     }
 
     //EZ: 041114
@@ -567,7 +567,7 @@ public class RtpTextDePacketizer {
      * Function to handle lost packets. Adds the LOSS CHAR to output.
      *
      * @param sequenceNumber The sequence number of the lost packet.
-     */ 
+     */
     public void lostPacket(long sequenceNumber) {
 	missingPackets.remove(new Long(sequenceNumber));
 	if (!receivedPackets.containsKey(new Long(sequenceNumber))) {
@@ -595,12 +595,12 @@ public class RtpTextDePacketizer {
 
 
     /**
-     * Inner class that defines what to do when a packet is lost.    
+     * Inner class that defines what to do when a packet is lost.
      *
      * @author Andreas Piirimets, Omnitor AB
      */
     private class LossTimerTask extends TimerTask {
-    
+
         private long sequenceNumber = 0;
         private RtpTextDePacketizer parent = null;
 
@@ -608,7 +608,7 @@ public class RtpTextDePacketizer {
          * Create a new LossTimerTask.
          *
          * @param seq The sequence number of the missingpacket.
-         * @param parent The creator of this object. 
+         * @param parent The creator of this object.
          */
         public LossTimerTask(long seq, RtpTextDePacketizer parent) {
             sequenceNumber=seq;
@@ -621,7 +621,7 @@ public class RtpTextDePacketizer {
 	 *
          */
         public void run() {
-	    
+
 	    //EZ: Removed below. Unessecary to make parseable data.
 	    //    Just add LOSS CHAR to output.
 
@@ -631,7 +631,7 @@ public class RtpTextDePacketizer {
             //                             0,
             //                             TextConstants.LOSS_CHAR);
 	    //try {
-	        
+
 	    //parent.receivedMissingPacket
 	    //    (sequenceNumber,
 	    ///     0,
@@ -646,15 +646,15 @@ public class RtpTextDePacketizer {
 		//     new byte[0]);
 		//}
 	    // End of change
-	    
+
 	    //EZ 041114: Add LOSS CHAR to output.
 	    parent.lostPacket(sequenceNumber);
-		
+
             this.cancel();
         }
 
     }
-    
+
 }
 
 

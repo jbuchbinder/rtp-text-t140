@@ -112,6 +112,9 @@ public class RtpTextReceiver implements Runnable,
             rtpSession.setReceivePayloadType(t140PayloadType);
         }
 
+        /*System.err.println("redPayloadType = " + redPayloadType + "\nt140PayloadType = " +t140PayloadType);
+        System.err.println("RtpTextReceiver, redFlagIncoming = " + (redFlagIncoming + "").toUpperCase());*/
+
 	remoteReceiverIsReady = false;
 	localReceiverIsReady = false;
 
@@ -246,6 +249,7 @@ public class RtpTextReceiver implements Runnable,
         if (data != null) {
 	    logger.finest("Data to buffer: " + new String(data));
 	    dataBuffer.setData(data);
+            System.err.println("RECEIVED DATA = " + new String(data));
         }
     }
 

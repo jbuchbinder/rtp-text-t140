@@ -27,7 +27,7 @@ import java.util.Iterator;
 
 /**
  *  handles inserting and filtering of highlevel text redundancy data
- *  
+ *
  *  @author Staffan Hellström
  *  @autohr Erik Zetterström
  */
@@ -38,7 +38,7 @@ public class RedundancyFilter {
     private LinkedList fifoBuffer=new LinkedList();
     private int currSeqNo=0;
     private int oldBytes=0;
-	
+
     private int primarySeqNumber=0;
     private int redundancyLevels=3;
 
@@ -49,11 +49,11 @@ public class RedundancyFilter {
 
     private final byte[] sosBytes={(byte)0xC2,(byte)0x98,(byte)'R'};
     private final byte[] stBytes={(byte)0xC2,(byte)0x9C};
-	
+
 
     //  Doesn't do much at all now...
     private boolean lowLevelSupport=false;
-    
+
     // "packet" counter
     private int lastReceivedSeqNr=-1;
 
@@ -68,29 +68,29 @@ public class RedundancyFilter {
 
     /**
      * Creates the reundancy filter.
-     * 
-     * @param redFlagOutgoing True if using RFC 4103 redundancy 
+     *
+     * @param redFlagOutgoing True if using RFC 4103 redundancy
      *                        is supported in this endpoint.
-     * @param redundancyLevels Number of redundantGenerations to use. 
+     * @param redundancyLevels Number of redundantGenerations to use.
      */
-    public RedundancyFilter(boolean redFlagOutgoing, 
+    public RedundancyFilter(boolean redFlagOutgoing,
 			    int redundancyLevels) {
         this.redFlagOutgoing=redFlagOutgoing;
 	this.redundancyLevels=redundancyLevels;
     }
 
-	
+
 
     /**
      * Converts a char in byte form to a number.
-     * 
+     *
      * @param c The byte to convert.
      * @return The converted number.
      */
     private int charToNumber(byte c) {
 	char ch=(char)c;
 	String string=""+ch;
-	return Integer.parseInt(string);	
+	return Integer.parseInt(string);
     }
 
 
@@ -99,12 +99,12 @@ public class RedundancyFilter {
      *
      * @param n The number to convert.
      * @return The converted bytes.
-     */	
+     */
     private byte[] numberToBytes(int n) {
 	String str=String.valueOf(n);
 	return str.getBytes();
     }
-	
+
 
     /**
      * Converts a number of a specified length to bytes.
@@ -121,11 +121,11 @@ public class RedundancyFilter {
 	}
 	return str.getBytes();
     }
-    
+
 
     /**
      * Converts a char in byte form to a number.
-     * 
+     *
      * @param c The char to convert.
      * @return The converted number.
      */
@@ -140,7 +140,7 @@ public class RedundancyFilter {
 	}
 	return result;
     }
-	
+
 
     /**
      * Converts two chars to a number.
@@ -153,7 +153,7 @@ public class RedundancyFilter {
     private int charToNumber(byte a, byte b) {
 	return 10*charToNumber(a)+charToNumber(b);
     }
-	
+
 
     /**
      * Finds a specified bytes in an array of other bytes.
@@ -162,22 +162,22 @@ public class RedundancyFilter {
      * @param startIdx Index to start searching from.
      * @param endIdx Index to search to.
      * @param toFind THe byte to search for.
-     * @return Returns the first index of the byte searched for, 
+     * @return Returns the first index of the byte searched for,
      *         -1 if not found or bad input.
-     */  
+     */
     int findByte(byte[] bytes, int startIdx, int endIdx, byte toFind) {
 	if (startIdx==-1) startIdx=0;
 	if (endIdx==-1) endIdx=bytes.length;
 	if (endIdx<startIdx) return -1;
-	
+
 	for (int i=startIdx; i<endIdx; i++) {
 	    if (bytes[i] == toFind)
 		return i;
 	}
-	
+
 	return -1;
     }
-	
+
 
     /**
      * Finds a specfied set of bytes in an array of bytes.
@@ -186,14 +186,14 @@ public class RedundancyFilter {
      * @param startIdx The Index to start searching from.
      * @param endIdx The index to search to.
      * @param toFind The bytes to search for.
-     * @param Returns The first index of the bytes searched for, 
+     * @param Returns The first index of the bytes searched for,
      *                -1 if not found or bad input.
      */
     int findBytes(byte[] bytes, int startIdx, int endIdx, byte[] toFind) {
 	if (startIdx==-1) startIdx=0;
 	if (endIdx==-1) endIdx=bytes.length;
 	if (endIdx<startIdx) return -1;
-	
+
 	for (int i=startIdx; i<endIdx; i++) {
 	    int matches=0;
 	    for (int j=0; j<toFind.length && i+j<endIdx; j++) {
@@ -204,22 +204,22 @@ public class RedundancyFilter {
 	return -1;
     }
 
-	
+
     /**
      * Finds a byte in an array.
-     * 
+     *
      * @param bytes The bytes to search in.
      * @param toFind The bytes to search for.
-     * @return The index of the byte or -1. 
+     * @return The index of the byte or -1.
      */
     int findByte(byte[] bytes, byte toFind) {
 	return findByte(bytes,-1,-1,toFind);
     }
 
-    
+
     /**
      * Finds a byte in an array.
-     * 
+     *
      * @param bytes The bytes to search in.
      * @param startIdx The index to start searching from.
      * @param toFind The byte to search for.
@@ -228,11 +228,11 @@ public class RedundancyFilter {
     int findByte(byte[] bytes, int startIdx, byte toFind) {
 	return findByte(bytes,startIdx,-1, toFind);
     }
-    
+
 
     /**
      * Finds a set of bytes in an array.
-     * 
+     *
      * @param bytes The bytes to search in.
      * @param startIdx The index to search from.
      * @param toFind The bytes to find.
@@ -241,75 +241,76 @@ public class RedundancyFilter {
     int findByte(byte[] bytes, int startIdx, byte[] toFind) {
 	return findBytes(bytes,startIdx,-1, toFind);
     }
-	
-	
+
+
     /**
      *  Seek for SOSR-ST blocks and extracts any lost data using the
      * 	redundancy data found in the blocks
      * 	NOTE: all packet loss characters are removed - new ones will
      * 	be inserted as need occurs.
-     * 
+     *
      * @param inputString The data to search.
      * @return The parsed data.
      */
     public byte[] filterInput(byte[] inputString) {
+
 	Vector output = new Vector();
-	
+
 	boolean done=false;
 	int stIndex=-1;
 	boolean firstLoop=true;
-	
+
 	while (!done) {
 	    int sosIndex=findByte(inputString,stIndex,sosBytes);
-	    
+
 	    stIndex=findByte(inputString,sosIndex,stBytes);
-		
+
 	    if (firstLoop && sosIndex != -1) {
-				
+
 		// add everything before the redundancy block
-		
-		for (int i=0; i<sosIndex; i++) {		    
+
+		for (int i=0; i<sosIndex; i++) {
 		    output.add(new Byte(inputString[i]));
 		}
-		
+
 		firstLoop=false;
 	    }
 
 	    if (sosIndex != -1 && stIndex != -1 && stIndex>sosIndex) {
 				// Inside a redundancy block
-				
+
 		int startIdx=sosIndex+sosBytes.length;
 		int rfcSupport=charToNumber(inputString[startIdx]);
 		int redLevel = charToNumber(inputString[startIdx+1]);
-		
+
 		int priSeqNr = charToNumber(inputString[startIdx+2],
 					    inputString[startIdx+3]);
-		
+
 		int nbrPacketsLost = priSeqNr - lastReceivedSeqNr - 1;
 
-		if ( nbrPacketsLost < 0 ) 
-		    nbrPacketsLost += 100; 
+		if ( nbrPacketsLost < 0 )
+		    nbrPacketsLost += 100;
 
 		//EZ: Added check to see if sending endpoint supports
 		//    RFC 4103 redundancy.
 		//    If RFC 4103 is supported T.140 redundancy
-		//    should be ignored. 
+		//    should be ignored.
 		if ( nbrPacketsLost > 0 && (rfcSupport != 1)) {
-		    
+
 		    // packet loss
-		    if (nbrPacketsLost <= redLevel) {	
+		    if (nbrPacketsLost <= redLevel) {
 			// Manageable loss, recover using redundancy
 			int recoverStart = redLevel - nbrPacketsLost;
 			int rIdx=startIdx+4;
 			int pos=0;
-			
+
 			// skip undamaged data
 			for (int i=0; i<recoverStart; i++) {
 			    int length = charToNumber(inputString[rIdx+pos],
 						      inputString[rIdx+pos+1]);
 			    pos += length+2;
 			}
-			
+
 			// recover lost data
 			for (int i=0; i<nbrPacketsLost; i++) {
 			    int length = charToNumber(inputString[rIdx+pos],
@@ -320,24 +321,24 @@ public class RedundancyFilter {
 			    }
 			    pos+=length;
 			}
-			
-			
+
+
 		    }
 		    else {
 			//EZ: Recover what we can. Replace each non-recoverable
 			//    lost packet with a loss char.
-			
+
 			int recoverStart = redLevel;
 			int rIdx = startIdx+4;
 			int pos = 0;
-			
+
 			//EZ: Add a loss char for each unrecoverable packet.
 			for (int i=0;i<(nbrPacketsLost-redLevel);i++) {
 			    output.add(new Byte((byte)0xef));
 			    output.add(new Byte((byte)0xbf));
 			    output.add(new Byte((byte)0xbd));
 			}
-			
+
 			//EZ: Extract and add all available redundant data.
 			for (int i=0;i<redLevel;i++) {
 			    int length = charToNumber(inputString[rIdx+pos],
@@ -347,27 +348,27 @@ public class RedundancyFilter {
 				output.add(new Byte(inputString[rIdx+pos+j]));
 			    }
 			    pos+=length;
-			    
+
 			}
-			
+
 		    }
-		
-		} 
-    
+
+		}
+
 		lastReceivedSeqNr=priSeqNr;
-	   } 
+	   }
 
 	    // Check for more redundancy blocks in the input
 	    int nextSOS=findByte(inputString,sosIndex+1,sosBytes);
-	    
+
 	    if (stIndex<nextSOS) {
-				
+
 		// between redundancy blocks, add everything apart
 		// from packet loss chars to the output
 		int st=(stIndex==-1)?0:stIndex+stBytes.length;
 		for (int i=st; i<nextSOS; i++) {
-		    if (inputString[i]==(byte)0xef && 
-			inputString[i+1]==(byte)0xbf && 
+		    if (inputString[i]==(byte)0xef &&
+			inputString[i+1]==(byte)0xbf &&
 			inputString[i+2]==(byte)0xbd) {
 			i+=2;
 			continue;
@@ -375,8 +376,8 @@ public class RedundancyFilter {
 		    output.add(new Byte(inputString[i]));
 		}
 	    }
-	    
-	    
+
+
 	    if (nextSOS==-1) {
 		int startCopyPos=0;
 		if (stIndex!= -1) {
@@ -398,59 +399,59 @@ public class RedundancyFilter {
 			}*/
 		    output.add(new Byte(inputString[i]));
 		}
-		
+
 	    }
-		
+
 	}
-	
+
 	// convert to byte array
-	
+
 	Object[] objarray=output.toArray();
 	byte[] result=new byte[objarray.length];
 
 	for (int cnt=0; cnt<objarray.length; cnt++) {
 	    result[cnt] = ((Byte)objarray[cnt]).byteValue();
 	}
-	
+
 	return result;
     }
-		
-	
+
+
     /**
      * Adds T.140 redundancy to T.140 text.
      *
      * @param The T.140 in byte format.
      * @return The T.140 text plus redundancy.
-     */	
+     */
     public byte[] addRedundancy(byte[] input) {
-	
+
 	byte[] rlevelsBytes=numberToBytes(redundancyLevels);
 	byte[] priseqBytes=numberToBytes(primarySeqNumber,2);
-	
+
 	// the header
 	byte[] header=new byte[4+rlevelsBytes.length+priseqBytes.length];
 	header[0]=sosBytes[0];
 	header[1]=sosBytes[1];
 	header[2]=sosBytes[2];
 
-	//EZ 041114: Added rfc4103 redundancy support indicator. 
-	if (redFlagOutgoing) 
+	//EZ 041114: Added rfc4103 redundancy support indicator.
+	if (redFlagOutgoing)
 	    header[3]=(byte)('1');
 	else
 	    header[3]=(byte)('0');
 
 	for (int i=0; i<rlevelsBytes.length; i++)
 	    header[4+i]=rlevelsBytes[i];
-	
+
 	for (int i=0; i<priseqBytes.length; i++)
 	    header[4+rlevelsBytes.length+i]=priseqBytes[i];
-	
-	// the body	
+
+	// the body
 	int nbytes=0;
 	if (fifoBuffer.size()<redundancyLevels)
 	    for (int i=0;i<redundancyLevels-fifoBuffer.size(); i++)
 		nbytes+=2;
-	
+
 	for (Iterator itor=fifoBuffer.iterator(); itor.hasNext(); ) {
 	    byte[] elmt=(byte[])itor.next();
 	    //EZ: Added check if last element was null
@@ -465,10 +466,10 @@ public class RedundancyFilter {
 		nbytes+=lengthBytes.length;
 	    }
 	}
-	
+
 	byte[] body=new byte[nbytes];
 	int pos=0;
-		
+
 	// zero out nonused redundancy levels
 	if (fifoBuffer.size()<redundancyLevels) {
 	    for (int i=0;i<redundancyLevels-fifoBuffer.size(); i++){
@@ -477,10 +478,10 @@ public class RedundancyFilter {
 		pos+=2;
 	    }
 	}
-		
+
 	for (Iterator itor=fifoBuffer.iterator(); itor.hasNext(); ) {
 	    byte[] elmt=(byte[])itor.next();
-	    
+
 	    // length of the data
 	    byte[] lengthBytes = null;
 	    if (elmt==null) {
@@ -494,28 +495,28 @@ public class RedundancyFilter {
 	    for (int i=0; i<lengthBytes.length; i++)
 		body[pos+i]=lengthBytes[i];
 	    pos+=lengthBytes.length;
-	    
+
 	    // the data
 	    if (elmt!=null) {
 		for (int j=0; j<elmt.length; j++)
 		    body[pos+j]=elmt[j];
-		
+
 		pos+=elmt.length;
 	    }
 	}
-		
+
 	// convert to byte array
 	//EZ: Added check if called with no data. For
 	//    transmitting old redundant data.
 	byte[] result = null;
-	if (input == null) 
-	    result = new byte[header.length + 
-			     body.length + 
+	if (input == null)
+	    result = new byte[header.length +
+			     body.length +
 			     stBytes.length];// + 1];
-	else 
-	    result=new byte[header.length + 
-			   body.length + 
-			   stBytes.length + 
+	else
+	    result=new byte[header.length +
+			   body.length +
+			   stBytes.length +
 			   input.length];//+1];
 
 	System.arraycopy(header,0,result,0,header.length);
@@ -527,25 +528,25 @@ public class RedundancyFilter {
 	//    For transmitting old redundant data.
 	if (input != null)
 	    System.arraycopy(input,0,result,header.length+
-			                    body.length+   
+			                    body.length+
    			                    stBytes.length,
-			                    input.length);	
-      
+			                    input.length);
+
 	// update FIFO buffer
 	if (fifoBuffer.size() >= redundancyLevels)
 	    fifoBuffer.removeFirst();
-	
+
 	fifoBuffer.addLast(input);
-	
+
 	primarySeqNumber++;
-	if (primarySeqNumber==100) 
+	if (primarySeqNumber==100)
 	    primarySeqNumber=0;
-	
+
 	return result;
     }
 
 
-    
+
 }
 
 

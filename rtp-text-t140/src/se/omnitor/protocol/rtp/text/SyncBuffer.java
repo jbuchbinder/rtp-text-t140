@@ -354,8 +354,11 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 		}
 	    }
 	    catch (InterruptedException ie) {
-            	logger.logp(Level.FINE, CLASS_NAME, METHOD, "Thread was interrupted, possible cause of hangup", ie);
-	    }
+                ie.printStackTrace();
+                logger.logp(Level.FINE, CLASS_NAME, METHOD,
+                            "Thread was interrupted, possible cause of hangup",
+                            ie);
+            }
 
             // If nothing is sent in 55 seconds, send a zero width no break
             // space. This will prevent NATs closing the UDP hole.
