@@ -249,7 +249,7 @@ public class RtpTextReceiver implements Runnable,
         if (data != null) {
 	    logger.finest("Data to buffer: " + new String(data));
 	    dataBuffer.setData(data);
-            System.err.println("RECEIVED DATA = " + new String(data));
+            //System.err.println("RECEIVED DATA = " + new String(data));
         }
     }
 
