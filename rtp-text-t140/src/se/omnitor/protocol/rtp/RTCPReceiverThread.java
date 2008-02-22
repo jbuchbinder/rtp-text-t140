@@ -195,6 +195,8 @@ public class RTCPReceiverThread implements Runnable {
                     // It's OK to have socket exception when socket is closed.
 		    //System.err.println("RTCPReceiver recieve error:"+e);
                     //e.printStackTrace();
+		}catch (Exception e) {
+			// Sometimes an interruptedException comes here due to Hangup
 		}
 
 		rtpSession.outprint("Len " + header.getLength() +  "  " +
