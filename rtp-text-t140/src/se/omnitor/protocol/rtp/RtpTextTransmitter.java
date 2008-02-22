@@ -406,6 +406,8 @@ public class RtpTextTransmitter implements Runnable {
 			dataBuffer.stop();
 			thisThread.setState(StateThread.STOP);
 			thisThread.interrupt();
+		}
+		if (rtpSession != null) {
 			// logger.finest("Stopping RTP and RTCP sessions.");
 			rtpSession.stopRTCPSenderThread();
 			rtpSession.stopRTPThread();
