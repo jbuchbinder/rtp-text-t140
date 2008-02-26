@@ -18,12 +18,7 @@
  */
 package se.omnitor.protocol.rtp;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Random;
-//import java.util.logging.Logger;
-//import javax.media.Buffer;
-//import se.omnitor.media.protocol.text.t140.Buffer;
-//import se.omnitor.media.protocol.text.t140.TextPacketizer;
 import se.omnitor.protocol.rtp.Session;
 import se.omnitor.protocol.rtp.StateThread;
 import se.omnitor.protocol.rtp.packets.RTPPacket;
@@ -31,8 +26,6 @@ import se.omnitor.protocol.rtp.text.RtpTextBuffer;
 import se.omnitor.protocol.rtp.text.RtpTextPacketizer;
 import se.omnitor.protocol.rtp.text.SyncBuffer;
 import se.omnitor.protocol.rtp.text.TextConstants;
-
-//import LogClasses and Classes
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,13 +45,7 @@ public class RtpTextTransmitter implements Runnable {
 	private String ipAddress;
 	private int localPort;
 	private int remotePort;
-	private int t140PayloadType;
 	private boolean redFlagOutgoing;
-	private int redPayloadType;
-	private int redundantGenerations;
-	private long bufferTime;
-	private int cpp;
-	private boolean useCpp;
 
 	private boolean isEconf351Client = false;
 
@@ -67,7 +54,6 @@ public class RtpTextTransmitter implements Runnable {
 	// EZ: T140 redundancy
 	private se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter redFilter;
 
-	private boolean redT140FlagOutgoing = false;
 	private int redundantT140Generations = 0;
 
 	//EZ: SSRC
@@ -121,11 +107,7 @@ public class RtpTextTransmitter implements Runnable {
 		this.ipAddress = ipAddress;
 		this.localPort = localPort;
 		this.remotePort = remotePort;
-		this.t140PayloadType = t140PayloadType;
 		this.redFlagOutgoing = redFlagOutgoing;
-		this.redPayloadType = redPayloadType;
-		this.redundantGenerations = redundantGenerations;
-		this.redT140FlagOutgoing = redT140FlagOutgoing;
 		this.redundantT140Generations = redundantT140Generations;
 		this.dataBuffer = dataBuffer;
 		this.isEconf351Client = econf351Client;
@@ -189,7 +171,7 @@ public class RtpTextTransmitter implements Runnable {
 		if (startRtpTransmit) {
 			start();
 		}
-		logger.logp(Level.FINEST, CLASS_NAME, METHOD, "checking ssrc", new Long(ssrc));
+		logger.logp(Level.FINEST, CLASS_NAME, METHOD, "checking ssrc", Long.valueOf(ssrc));
 		logger.exiting(CLASS_NAME, METHOD);
 	}
 
@@ -202,12 +184,13 @@ public class RtpTextTransmitter implements Runnable {
 
 		//Creata a seed to ensure the SSRC is as random as possible,
 		long time  = java.lang.System.currentTimeMillis();
-		long ports = remotePort << 32 | localPort;
+		long ports = (long)remotePort << 32 | localPort;
 		long addr  = 0;
 		byte[] rawLocalIPAddr  = null;
 		byte[] rawRemoteIPAddr = null;
 		long seed = 0;
 
+		System.out.println("remotePort=" + remotePort + ", localPort=" + localPort + ", ports=" + ports);
 		try {
 			rawLocalIPAddr  = java.net.InetAddress.getLocalHost().getAddress();
 			rawRemoteIPAddr = java.net.InetAddress.getByName(ipAddress).getAddress();
@@ -217,23 +200,23 @@ public class RtpTextTransmitter implements Runnable {
 
 		//IPv6
 		if(rawLocalIPAddr.length==6) {
-			addr = rawLocalIPAddr[0] << 40 |
-			rawLocalIPAddr[1] << 32 |
-			rawLocalIPAddr[2] << 24 |
-			rawLocalIPAddr[3] << 16 |
-			rawLocalIPAddr[4] << 8  |
-			rawLocalIPAddr[5];
+			addr = (long)rawLocalIPAddr[0] << 40 |
+			(long)rawLocalIPAddr[1] << 32 |
+			(long)rawLocalIPAddr[2] << 24 |
+			(long)rawLocalIPAddr[3] << 16 |
+			(long)rawLocalIPAddr[4] << 8  |
+			(long)rawLocalIPAddr[5];
 		}
 		//IPv4
 		else if(rawLocalIPAddr.length==4) {
-			addr = rawLocalIPAddr[0] << 56 |
-			rawLocalIPAddr[1] << 48 |
-			rawLocalIPAddr[2] << 40 |
-			rawLocalIPAddr[3] << 32 |
-			rawRemoteIPAddr[0] << 24 |
-			rawRemoteIPAddr[1] << 16 |
-			rawRemoteIPAddr[2] << 8  |
-			rawRemoteIPAddr[3];
+			addr = (long)rawLocalIPAddr[0] << 56 |
+			(long)rawLocalIPAddr[1] << 48 |
+			(long)rawLocalIPAddr[2] << 40 |
+			(long)rawLocalIPAddr[3] << 32 |
+			(long)rawRemoteIPAddr[0] << 24 |
+			(long)rawRemoteIPAddr[1] << 16 |
+			(long)rawRemoteIPAddr[2] << 8  |
+			(long)rawRemoteIPAddr[3];
 		}
 		else {
 			System.out.println("Unknown IP format in createSSRC");
@@ -244,16 +227,6 @@ public class RtpTextTransmitter implements Runnable {
 		//Use the seed to get the SSRC.
 		Random rand = new Random(seed);
 		return rand.nextLong();
-	}
-
-	/**
-	 * Writes a log comment.
-	 *
-	 * @throws Throwable (This function will not throw anything, this is only
-	 * for en requirements of the finalize() function)
-	 */
-	protected void finalize() throws Throwable {
-		//logger.finest("Finalizing instance of RtpTextTransmitter.");
 	}
 
 	/**
@@ -271,12 +244,8 @@ public class RtpTextTransmitter implements Runnable {
 		// log when entering a method
 		logger.entering(CLASS_NAME, METHOD);
 
-		String stringIntoBytes;
 		RTPPacket outputPacket;
 		byte[] data;
-		int cnt;
-		int emptyGenerations;
-		String strData;
 
 		RtpTextBuffer inBuffer;
 		RtpTextBuffer outBuffer;
@@ -431,7 +400,7 @@ public class RtpTextTransmitter implements Runnable {
 	 * @param email The email address
 	 */
 	public void setEmail(String email) {
-		rtpSession.setEMail(email);
+		rtpSession.setEmail(email);
 	}
 
 	public int dropOneRtpTextSeqNo() {
@@ -449,7 +418,7 @@ public class RtpTextTransmitter implements Runnable {
 			try {
 				b[cnt] = (byte)Integer.parseInt(""+hexCode.substring(cnt*2, cnt*2+2), 16);
 			}
-			catch (Exception e) {
+			catch (NumberFormatException e) {
 				// Ignore!
 			}
 			System.out.println(" to " + b);			

@@ -19,8 +19,6 @@
 
 package se.omnitor.protocol.rtp.t140redundancy;
 
-import se.omnitor.protocol.rtp.FIFOBuffer;
-
 import java.util.Vector;
 import java.util.LinkedList;
 import java.util.Iterator;
@@ -34,10 +32,7 @@ import java.util.Iterator;
 public class RedundancyFilter {
 
     //Add redundancy variables
-    private byte[] prevInput=null;
-    private LinkedList fifoBuffer=new LinkedList();
-    private int currSeqNo=0;
-    private int oldBytes=0;
+    private LinkedList<byte[]> fifoBuffer = new LinkedList<byte[]>();
 
     private int primarySeqNumber=0;
     private int redundancyLevels=3;
@@ -49,10 +44,6 @@ public class RedundancyFilter {
 
     private final byte[] sosBytes={(byte)0xC2,(byte)0x98,(byte)'R'};
     private final byte[] stBytes={(byte)0xC2,(byte)0x9C};
-
-
-    //  Doesn't do much at all now...
-    private boolean lowLevelSupport=false;
 
     // "packet" counter
     private int lastReceivedSeqNr=-1;
@@ -129,6 +120,7 @@ public class RedundancyFilter {
      * @param c The char to convert.
      * @return The converted number.
      */
+    /*
     private int charToNumber(byte[] c) {
 	int result=0;
 	int j=c.length-1;
@@ -140,7 +132,7 @@ public class RedundancyFilter {
 	}
 	return result;
     }
-
+*/
 
     /**
      * Converts two chars to a number.
@@ -254,7 +246,7 @@ public class RedundancyFilter {
      */
     public byte[] filterInput(byte[] inputString) {
 
-	Vector output = new Vector();
+	Vector<Byte> output = new Vector<Byte>();
 
 	boolean done=false;
 	int stIndex=-1;
@@ -328,7 +320,6 @@ public class RedundancyFilter {
 			//EZ: Recover what we can. Replace each non-recoverable
 			//    lost packet with a loss char.
 
-			int recoverStart = redLevel;
 			int rIdx = startIdx+4;
 			int pos = 0;
 
@@ -545,28 +536,4 @@ public class RedundancyFilter {
 	return result;
     }
 
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

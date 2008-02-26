@@ -53,13 +53,12 @@ public class FifoBuffer {
      * @param newData The data to set/append. 
      */
     public synchronized void setData(byte[] newData) {
-	byte[] temp = null;
 
 	if (dataWaiting.length == 0) {
 	    dataWaiting = newData;
 	}
 	else {
-	    temp = dataWaiting;
+		byte[] temp = dataWaiting;
 	    dataWaiting = new byte[temp.length + newData.length];
 	    System.arraycopy(temp, 0, dataWaiting, 0, temp.length);
 	    System.arraycopy(newData, 0, dataWaiting, temp.length, 
@@ -99,6 +98,3 @@ public class FifoBuffer {
     }
 
 }
-
-
-

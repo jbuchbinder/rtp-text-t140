@@ -175,16 +175,3 @@ public abstract class TextConstants {
     public static final char GRAPHIC_END     = 0x6D;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

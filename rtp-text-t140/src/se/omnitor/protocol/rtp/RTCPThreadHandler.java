@@ -49,7 +49,6 @@ public class RTCPThreadHandler extends java.lang.Object
     //private SymmetricMulticastSocket socket;
     private java.net.MulticastSocket socket;
     private boolean symmetric;
-    private int localPort;
 
     /**
      * Constructor creates the sender and receiver
@@ -66,7 +65,6 @@ public class RTCPThreadHandler extends java.lang.Object
         this.multicastGroupIPAddress = multicastGroupIPAddress;
         this.rtpSession = rtpSession;
 	symmetric=false;
-	localPort=0;
 
     }
 
@@ -77,7 +75,6 @@ public class RTCPThreadHandler extends java.lang.Object
 				)
     {
 	this.multicastGroupIPAddress = multicastGroupIPAddress;
-	this.localPort = localPort;
         this.rtpSession = rtpSession;
 	this.symmetric=symmetric;
 

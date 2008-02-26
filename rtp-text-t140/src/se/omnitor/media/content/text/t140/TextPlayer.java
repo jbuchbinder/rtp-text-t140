@@ -30,11 +30,6 @@
  */
 package se.omnitor.media.content.text.t140;
 
-import java.awt.Component;
-import java.awt.TextArea;
-
-import java.io.UnsupportedEncodingException ;
-
 import javax.media.Buffer;
 import javax.media.Control;
 import javax.media.Format;
@@ -45,7 +40,6 @@ import javax.media.control.BufferControl;
 import javax.media.protocol.ContentDescriptor;
 
 import se.omnitor.util.FifoBuffer;
-import se.omnitor.protocol.rtp.text.TextConstants;
 import se.omnitor.media.protocol.text.t140.TextFormat;
 
 /** 
@@ -63,15 +57,9 @@ public class TextPlayer implements Renderer, BufferControl, Owned {
     
     private TextFormat[] supportedInputFormats;
     private TextFormat[] supportedOutputFormats;
-    private boolean started;
     private ContentDescriptor cd;
     private Format inputFormat;
     private FifoBuffer fifo;
-
-    // ??
-    private String outString = "";
-    private TextArea ta = null;
-    private Component component = null;
 
     /**
      * Initializes text formats.
@@ -81,8 +69,6 @@ public class TextPlayer implements Renderer, BufferControl, Owned {
 	supportedInputFormats = new TextFormat[] {  new TextFormat("UTF8") };
 	supportedOutputFormats = new TextFormat [] { new TextFormat("UTF8") };
 	
-	started = false;
-
 	this.fifo = fifo;
 
 	cd = new ContentDescriptor(ContentDescriptor.RAW);
@@ -143,8 +129,8 @@ public class TextPlayer implements Renderer, BufferControl, Owned {
 		}
 	    }
 	    return null;
-	} catch (Exception e) {   // no such controlType or such control
-	    return null;
+	} catch (ClassNotFoundException e) { // no such controlType or such control
+		return null;
 	}
     }
 
@@ -190,7 +176,6 @@ public class TextPlayer implements Renderer, BufferControl, Owned {
      *
      */
     public void start() {
-	started = true;
     }
 
     /**
@@ -198,7 +183,6 @@ public class TextPlayer implements Renderer, BufferControl, Owned {
      *
      */
     public void stop() {
-	started = false;
     }
     
     /**

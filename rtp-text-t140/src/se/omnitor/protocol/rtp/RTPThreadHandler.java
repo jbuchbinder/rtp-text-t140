@@ -125,13 +125,9 @@ public class RTPThreadHandler implements Runnable {
 
     //private Logger logger = Logger.getLogger("se.omnitor.rtp");
 
-    private boolean packetLossEnabled = false; //EZ: Enables packet loss
-    private int lossRatio = 50; //EZ: The packet loss ratio
-
     //private SymmetricMulticastSocket socket;
     private DatagramSocket socket;
     private boolean symmetric;
-    private boolean rtpSymmetricSocketStarted;
 
 
     /**
@@ -204,8 +200,12 @@ public class RTPThreadHandler implements Runnable {
         this.rtpSession = rtpSession;
 
         // Start with a random sequence number
-        sequence_number = (long) (Math.abs(rnd.nextInt()) & 0x000000FF);
-        timestamp = rtpSession.currentTime() + rtpSession.RANDOM_OFFSET;
+        int randomInt;
+        do {
+        	randomInt = rnd.nextInt();
+        } while (randomInt == Integer.MIN_VALUE);
+        sequence_number = (long) (Math.abs(randomInt) & 0x000000FF);
+        timestamp = rtpSession.currentTime() + Session.RANDOM_OFFSET;
 
         rtpSession.outprintln("RTP Session SSRC: " +
                               Long.toHexString(rtpSession.ssrc));
@@ -213,7 +213,6 @@ public class RTPThreadHandler implements Runnable {
 
         // IP: Added following line
         thisThread = new StateThread(this, "RTP Thread Handler");
-        rtpSymmetricSocketStarted = false;
     }
 
     /**
@@ -380,7 +379,7 @@ public class RTPThreadHandler implements Runnable {
         if (packet.getTimeStamp() != 0) {
             timestamp = packet.getTimeStamp();
         } else {
-            timestamp = rtpSession.currentTime() + rtpSession.RANDOM_OFFSET;
+            timestamp = rtpSession.currentTime() + Session.RANDOM_OFFSET;
         }
 
         byte[] ts = new byte[4]; // timestamp is 4 bytes
@@ -510,9 +509,6 @@ public class RTPThreadHandler implements Runnable {
 
         byte[] buf = new byte[1024];
         DatagramPacket packet = new DatagramPacket(buf, buf.length);
-        int receivePayloadType;
-
-        receivePayloadType = rtpSession.getReceivePayloadType();
 
         // IP: Moved following line own method instead
         // MulticastSocket m_sockReceive =

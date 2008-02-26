@@ -29,7 +29,6 @@ import se.omnitor.protocol.rtp.packets.SenderInfo;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.net.SocketException;
 import java.util.Date;
 
@@ -117,12 +116,10 @@ public class RTCPReceiverThread implements Runnable {
 	    try {
 		Thread.sleep(2000);
 	    }
-	    catch (Exception e) {
+	    catch (InterruptedException e) {
 		// Ignore any interruption
 	    }
-	    if (socket != null) {
 		socket.close();
-	    }
 	}
     }
 
@@ -184,7 +181,7 @@ public class RTCPReceiverThread implements Runnable {
 		rtpSession.outprint ("\n");
 
 		rtpSession.outprint
-		    (new Long ((new Date()).getTime()).toString() +
+		    (Long.toString((new Date()).getTime()) +
 		     "   " + "RTCP" + "  ");
 
 		try {
@@ -217,7 +214,7 @@ public class RTCPReceiverThread implements Runnable {
 
 		// RTCP Header Validity Check 2
 		int payloadType_1 = (int) (packet[1] & 0xff);
-		if  ((payloadType_1 !=  RTCPConstants.RTCP_SR) &
+		if  ((payloadType_1 !=  RTCPConstants.RTCP_SR) &&
 		     (payloadType_1 !=   RTCPConstants.RTCP_RR ) ) {
 
 		    rtpSession.outprint("RTCP Header Check Fail : " +

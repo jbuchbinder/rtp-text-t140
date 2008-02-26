@@ -30,13 +30,6 @@
  */
 package se.omnitor.protocol.rtp.text;
 
-import javax.media.Codec;
-import javax.media.Format;
-import javax.media.format.AudioFormat;
-
-import javax.media.ResourceUnavailableException;
-
-import java.util.Date;
 import java.util.Vector;
 
 /**
@@ -90,11 +83,10 @@ public class RtpTextPacketizer {
     public static final int RTP_PACK_BLOCKLEN_LOWER_MASK   = 0xff << 0;
 
     private int t140Pt;
-    private int redPt;
     private int redGen;
 
     //Previous generations that are to be transmitted redundantely.
-    private Vector redundantBuffer   = null;
+    private Vector<RTPTextRedData> redundantBuffer   = null;
 
     private long theTimeStamp        = 0;
     private long sequenceNumber      = 1;   //BEGIN AT WHICH NUMBER?
@@ -133,9 +125,8 @@ public class RtpTextPacketizer {
     public RtpTextPacketizer(int t140Pt, int redPt, int redGen) {
 
 	this.t140Pt = t140Pt;
-	this.redPt = redPt;
 	this.redGen = redGen;
-	redundantBuffer = new Vector(0, 1);
+	redundantBuffer = new Vector<RTPTextRedData>(0, 1);
 
     }
 
@@ -151,11 +142,8 @@ public class RtpTextPacketizer {
     public synchronized void encode(RtpTextBuffer inBuffer,
 				    RtpTextBuffer outBuffer) {
 
-	Date today = new Date();
-
 	int i=0; //Packet index
 
-	int inLength = inBuffer.getLength();
 	theTimeStamp = java.lang.System.currentTimeMillis();//today.getTime();
         byte[] inData = inBuffer.getData();
 	int inDataLength = inBuffer.getLength();
@@ -167,7 +155,7 @@ public class RtpTextPacketizer {
 	outData = new byte[redGen * TextConstants.REDUNDANT_HEADER_SIZE];
 
 	if (redundantBuffer == null) {
-	    redundantBuffer = new Vector(redGen, 0);
+	    redundantBuffer = new Vector<RTPTextRedData>(redGen, 0);
 	}
 
 	//Redundant data will be sent.
@@ -209,7 +197,7 @@ public class RtpTextPacketizer {
 		    //Build the extra header info
 		    //Timestamp 14 bits long
 		    timestampOffset = (int)((theTimeStamp -
-					     dataObj.getTimestamp())
+					     dataObj.getTimeStamp())
 					    & 0x3FFF);
 		    if (dataObj.getData() == null) {
 			dataLength = 0;
@@ -370,7 +358,7 @@ public class RtpTextPacketizer {
 	 *
 	 * @return the timestamp.
 	 */
-	public long getTimestamp() {
+	public long getTimeStamp() {
 	    return myTimestamp;
 	}
 
@@ -400,17 +388,3 @@ public class RtpTextPacketizer {
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

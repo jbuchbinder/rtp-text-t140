@@ -68,11 +68,6 @@ public class TextDePacketizer implements Codec {
     private TextFormat[] supportedInputFormats  = null;
     private TextFormat[] supportedOutputFormats = null;
 
-    private AudioFormat[] siaf = null;
-    private AudioFormat[] soaf = null;
-
-    private boolean firstPacket = true;
-
     private RtpTextDePacketizer depacketizer;
 
 
@@ -105,9 +100,6 @@ public class TextDePacketizer implements Codec {
 	depacketizer = 
 	    new RtpTextDePacketizer(t140PayloadType, redPt, redFlagIncoming);
 
-
-        soaf = new AudioFormat[] { new AudioFormat(AudioFormat.ULAW) };
-        siaf = new AudioFormat[] { new AudioFormat(AudioFormat.ULAW_RTP) };
 
         //Add all supported input formats
         supportedInputFormats = new TextFormat[] { 

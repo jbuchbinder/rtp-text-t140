@@ -108,15 +108,3 @@ public class RtpTextBuffer {
 	return false;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

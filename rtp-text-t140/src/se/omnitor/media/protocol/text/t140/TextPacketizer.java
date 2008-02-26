@@ -33,12 +33,8 @@ package se.omnitor.media.protocol.text.t140;
 import javax.media.Buffer;
 import javax.media.Codec;
 import javax.media.Format;
-import javax.media.format.AudioFormat;
 
 import javax.media.ResourceUnavailableException;
-
-import java.util.Date;
-import java.util.Vector;
 
 import se.omnitor.protocol.rtp.text.RtpTextBuffer;
 import se.omnitor.protocol.rtp.text.RtpTextPacketizer;
@@ -286,17 +282,3 @@ public class TextPacketizer implements Codec {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

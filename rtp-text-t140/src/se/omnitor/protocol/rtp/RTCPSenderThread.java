@@ -70,15 +70,9 @@ public class RTCPSenderThread extends Thread
      */
     private boolean waitingForByeBackoff = false;
 
-    /**
-     *   Initialize Random Number Generator
-     */
-    private Random rnd = new Random();
-
     // IP: Added this to get rid of all static types
     private Session rtpSession;
 
-    private DatagramSocket socket;
     private boolean symmetric;
 
     /**
@@ -425,7 +419,7 @@ public class RTCPSenderThread extends Thread
         //byte NTP_TimeStamp[] = new byte [8];
         byte[] rtp_TimeStamp =
 	    PacketUtils.longToBytes ( (long) rtpSession.tc +
-				      rtpSession.RANDOM_OFFSET , 4 );
+				      Session.RANDOM_OFFSET , 4 );
 
         byte[] senderPacketCount =
 	    PacketUtils.longToBytes ( rtpSession.packetCount, 4);
@@ -452,9 +446,6 @@ public class RTCPSenderThread extends Thread
 
         v_p_rc = (byte) ( v_p_rc | (byte) ( receptionReports & 0x1F ) ) ;
         rtpSession.outprintln("RC: " + receptionReports);
-
-        // Get an SDES Packet
-        byte[] sdesPacket = assembleRTCPSourceDescriptionPacket();
 
         // Length is 32 bit words contained in the packet -1
         byte[] length =

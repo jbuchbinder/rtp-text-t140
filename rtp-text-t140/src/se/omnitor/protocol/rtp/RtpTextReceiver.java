@@ -18,12 +18,7 @@
  */
 package se.omnitor.protocol.rtp;
 
-import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-//import javax.media.Buffer;
-//import se.omnitor.media.protocol.text.t140.Buffer;
-//import se.omnitor.rtp.FIFOBuffer;
 import se.omnitor.protocol.rtp.packets.RTCP_actionListener;
 import se.omnitor.protocol.rtp.packets.RTCPBYEPacket;
 import se.omnitor.protocol.rtp.packets.RTCPReceiverReportPacket;
@@ -31,7 +26,6 @@ import se.omnitor.protocol.rtp.packets.RTCPSDESPacket;
 import se.omnitor.protocol.rtp.packets.RTCPSenderReportPacket;
 import se.omnitor.protocol.rtp.packets.RTP_actionListener;
 import se.omnitor.protocol.rtp.packets.RTPPacket;
-//import se.omnitor.media.protocol.text.t140.TextDePacketizer;
 import se.omnitor.protocol.rtp.text.RtpTextDePacketizer;
 import se.omnitor.util.FifoBuffer;
 import se.omnitor.protocol.rtp.text.RtpTextBuffer;
@@ -51,11 +45,7 @@ public class RtpTextReceiver implements Runnable,
     private RtpTextDePacketizer textDePacketizer;
     private Session rtpSession;
 
-    private String ipAddress;
     private int localPort;
-    private int t140PayloadType;
-    private boolean redFlagIncoming;
-    private int redPayloadType;
 
     private FifoBuffer dataBuffer;
 
@@ -67,8 +57,6 @@ public class RtpTextReceiver implements Runnable,
 
     //EZ: T140 redundancy
     private se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter redFilter;
-    //EZ_ FIX BELOW
-    private boolean redT140FlagIncoming = false;
 
     /**
      * Initializes the RTP text receiver and starts the reception thread.
@@ -92,11 +80,7 @@ public class RtpTextReceiver implements Runnable,
 
         this.rtpSession = rtpSession;//new Session(ipAddress, 64000);
 
-        this.ipAddress = ipAddress;
         this.localPort = localPort;
-        this.t140PayloadType = t140PayloadType;
-        this.redFlagIncoming = redFlagIncoming;
-        this.redPayloadType = redPayloadType;
 	this.dataBuffer = dataBuffer;
 
 
@@ -224,7 +208,6 @@ public class RtpTextReceiver implements Runnable,
     public void handleRTPEvent(RTPPacket rtpPacket)
     {
         //TODO: PUT THIS IN THE RUN THREAD AND START THE THREAD IN THIS METHOD
-        int index = 0;
 
 	RtpTextBuffer inBuffer = new RtpTextBuffer();
 	RtpTextBuffer outBuffer = new RtpTextBuffer();
@@ -442,7 +425,7 @@ public class RtpTextReceiver implements Runnable,
      * @param email The email address
      */
     public void setEmail(String email) {
-	rtpSession.setEMail(email);
+	rtpSession.setEmail(email);
     }
 
 }

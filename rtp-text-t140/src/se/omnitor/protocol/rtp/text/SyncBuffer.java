@@ -87,7 +87,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 		this.redGen = redGen;
 		this.bufferTime = bufferTime;
 
-		dataSetSemaphore = new Integer(0);
+		dataSetSemaphore = Integer.valueOf(0);
 
 		dataWaiting = new byte[0];
 		dataToSend = new byte[0];
@@ -243,9 +243,8 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 		catch(Throwable t) {
 			logger.logp(Level.SEVERE, CLASS_NAME, METHOD, "unexpected throwable caught (swallowed), probably due to a bug", t);
 		}
-		finally {
-			return temp;
-		}
+
+		return temp;
 	}
 
 	/* A Java byte has a value of -128 to 127.  With eight bits and no
@@ -366,7 +365,7 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 			}
 			
 
-			logger.logp(Level.FINEST, CLASS_NAME, METHOD, "the buffertime is", new Integer(bufferTime));
+			logger.logp(Level.FINEST, CLASS_NAME, METHOD, "the buffertime is", Integer.valueOf(bufferTime));
 			while (dataWaiting.length > 0 || redGensToSend > 0) {
 				try {
 					Thread.sleep(bufferTime);
@@ -459,6 +458,3 @@ public class SyncBuffer extends FifoBuffer implements Runnable {
 		return bufferTime;
 	}
 }
-
-
-

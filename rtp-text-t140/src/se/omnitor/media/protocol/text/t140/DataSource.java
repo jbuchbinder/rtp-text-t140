@@ -31,6 +31,7 @@
 package se.omnitor.media.protocol.text.t140;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.logging.Logger;
 import javax.media.Buffer;
 import javax.media.Format;
@@ -63,7 +64,6 @@ public class DataSource extends PushBufferDataSource {
 
     private Logger logger;
     private boolean connected;
-    private String contentType;
     private TextStream[] streams;
     private boolean started;
     private SyncBuffer sb;
@@ -162,7 +162,7 @@ public class DataSource extends PushBufferDataSource {
 	    }
 
 
-	    if (type.toUpperCase().equals("STDIN")) {
+	    if (type.toUpperCase(Locale.US).equals("STDIN")) {
 
 		sb = new SyncBuffer(0, 300);
 		streams[0].start(sb);
@@ -381,12 +381,3 @@ public class DataSource extends PushBufferDataSource {
     }
 
 }
-
-
-
-
-
-
-
-
-

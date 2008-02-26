@@ -233,7 +233,7 @@ public class Source extends Object {
         if (expected_interval ==0 || lost_interval <=0) 
             fraction =0;
         else
-            fraction = (lost_interval << 8) / expected_interval;
+            fraction = (lost_interval << 8) / (double)expected_interval;
               
         //dlsr - express it in units of 1/65336 seconds
         dlsr = (timeofLastSRRcvd - currentTime())/ 65536;
