@@ -22,7 +22,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Enumeration;
-import java.util.Random;
 
 /**
  * This class encapsulates the functionality to construct and send out an

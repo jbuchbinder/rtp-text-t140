@@ -30,14 +30,9 @@
  */
 package se.omnitor.media.protocol.text.t140;
 
-import java.util.Hashtable;
-import java.util.Timer;
-import java.util.TimerTask;
-
 import javax.media.Buffer;
 import javax.media.Codec;
 import javax.media.Format;
-import javax.media.format.AudioFormat;
 
 import se.omnitor.protocol.rtp.text.RtpTextDePacketizer;
 import se.omnitor.protocol.rtp.text.RtpTextBuffer;
