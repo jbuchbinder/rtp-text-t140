@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004  University of Wisconsin-Madison and Omnitor AB
+ * Copyright (C) 2004-2008  University of Wisconsin-Madison and Omnitor AB
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -190,7 +190,6 @@ public class RtpTextTransmitter implements Runnable {
 		byte[] rawRemoteIPAddr = null;
 		long seed = 0;
 
-		System.out.println("remotePort=" + remotePort + ", localPort=" + localPort + ", ports=" + ports);
 		try {
 			rawLocalIPAddr  = java.net.InetAddress.getLocalHost().getAddress();
 			rawRemoteIPAddr = java.net.InetAddress.getByName(ipAddress).getAddress();
@@ -219,7 +218,7 @@ public class RtpTextTransmitter implements Runnable {
 			(long)rawRemoteIPAddr[3];
 		}
 		else {
-			System.out.println("Unknown IP format in createSSRC");
+			logger.warning("Unknown IP format in createSSRC");
 		}
 
 		seed = (time | ports | addr);

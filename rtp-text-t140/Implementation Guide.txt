@@ -5,9 +5,9 @@ Authors:
   Andreas Piirimets, Omnitor AB
   Erik Zetterström, Omnitor AB
 
-Copyright (C) 2004 Board of Regents of the University of Wisconsin System
+Copyright (C) 2004-2008 Board of Regents of the University of Wisconsin System
 (Univ. of Wisconsin-Madison, Trace R&D Center)
-Copyright (C) 2004 Omnitor AB
+Copyright (C) 2004-2008 Omnitor AB
 
 This software was developed with support from the National Institute on
 Disability and Rehabilitation Research, US Dept of Education under Grant
