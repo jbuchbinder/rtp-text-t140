@@ -638,7 +638,9 @@ public class RTPThreadHandler implements Runnable {
     public void stop() {
         if (thisThread != null) {
             thisThread.setState(StateThread.STOP);
-            thisThread.interrupt();
+            if (thisThread != null) { 
+            	thisThread.interrupt();
+            }
         }
 
         if (m_sockSend != null) {
