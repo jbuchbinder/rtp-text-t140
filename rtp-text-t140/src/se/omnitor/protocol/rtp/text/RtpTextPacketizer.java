@@ -380,11 +380,6 @@ public class RtpTextPacketizer {
 	    return myDataArr;
 	}
     }
-    
-    public int dropOneRtpTextSeqNo() {
-    	sequenceNumber++;
-    	return (int)(sequenceNumber-1);
-    }
 
 
 }

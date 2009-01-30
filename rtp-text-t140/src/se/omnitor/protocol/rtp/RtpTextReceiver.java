@@ -18,6 +18,7 @@
  */
 package se.omnitor.protocol.rtp;
 
+import java.awt.Frame;
 import java.util.logging.Logger;
 import se.omnitor.protocol.rtp.packets.RTCP_actionListener;
 import se.omnitor.protocol.rtp.packets.RTCPBYEPacket;
@@ -44,6 +45,8 @@ public class RtpTextReceiver implements Runnable,
     private StateThread thisThread = null;
     private RtpTextDePacketizer textDePacketizer;
     private Session rtpSession;
+    
+    private IncomingPacketsDialogHandler incomingPacketsDialogHandler = null;
 
     private int localPort;
 
@@ -57,6 +60,8 @@ public class RtpTextReceiver implements Runnable,
 
     //EZ: T140 redundancy
     private se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter redFilter;
+    
+    private boolean redFlagIncoming;
 
     /**
      * Initializes the RTP text receiver and starts the reception thread.
@@ -78,6 +83,7 @@ public class RtpTextReceiver implements Runnable,
 
         logger.finest("ENTRY");
 
+        this.redFlagIncoming = redFlagIncoming;
         this.rtpSession = rtpSession;//new Session(ipAddress, 64000);
 
         this.localPort = localPort;
@@ -208,6 +214,12 @@ public class RtpTextReceiver implements Runnable,
     public void handleRTPEvent(RTPPacket rtpPacket)
     {
         //TODO: PUT THIS IN THE RUN THREAD AND START THE THREAD IN THIS METHOD
+
+    if (incomingPacketsDialogHandler != null) {
+    	incomingPacketsDialogHandler.addPacket(rtpPacket);
+    }
+    
+    System.out.println("Packet payload data for " + rtpPacket.getSequenceNumber() + ": " + rtpPacket.getPayloadData());
 
 	RtpTextBuffer inBuffer = new RtpTextBuffer();
 	RtpTextBuffer outBuffer = new RtpTextBuffer();
@@ -427,16 +439,23 @@ public class RtpTextReceiver implements Runnable,
     public void setEmail(String email) {
 	rtpSession.setEmail(email);
     }
+    
+    /*
 
+	public IncomingPacketsDialogHandler showIncomingRtpTextPackets(Frame owner) {
+		isShowIncomingPackets = true;
+		
+		if (incomingPacketsDialogHandler == null) {
+			incomingPacketsDialogHandler = new IncomingPacketsDialogHandler(owner);
+		}
+		
+		return incomingPacketsDialogHandler;
+	}
+	*/
+
+	
+	public void setIncomingPacketsDialogHandler(IncomingPacketsDialogHandler dialogHandler) {
+		incomingPacketsDialogHandler = dialogHandler;
+		dialogHandler.setRedundancy(redFlagIncoming);
+	}
 }
-
-
-
-
-
-
-
-
-
-
-

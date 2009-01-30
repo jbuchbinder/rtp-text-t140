@@ -28,6 +28,7 @@ import se.omnitor.protocol.rtp.text.SyncBuffer;
 import se.omnitor.protocol.rtp.text.TextConstants;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.Frame;
 
 /**
  * An RTP text transmitter that reads characters from a buffer and sends them
@@ -42,13 +43,15 @@ public class RtpTextTransmitter implements Runnable {
 	private Session rtpSession;
 	private RtpTextPacketizer textPacketizer;
 
+	private ThrowPacketDialogHandler throwPacketDialogHandler;
+	
 	private String ipAddress;
 	private int localPort;
 	private int remotePort;
 	private boolean redFlagOutgoing;
 
 	private boolean isEconf351Client = false;
-
+	
 	private SyncBuffer dataBuffer;
 
 	// EZ: T140 redundancy
@@ -273,7 +276,6 @@ public class RtpTextTransmitter implements Runnable {
 				}
 
 				if (data.length > 0 || redFlagOutgoing) {
-
 					if (thisThread.checkState() == StateThread.STOP) {
 						break;
 					}
@@ -323,7 +325,17 @@ public class RtpTextTransmitter implements Runnable {
 					outputPacket.setMarker(outBuffer.getMarker());
 					outputPacket.setSsrc(ssrc);
 
-					rtpSession.sendRTPPacket(outputPacket);
+					if (throwPacketDialogHandler != null && throwPacketDialogHandler.getNbrOfPacketsToThrow() > 0) {
+						System.out.println("Not sending!");
+						
+						throwPacketDialogHandler.addPacketsToThrow(-1);
+						throwPacketDialogHandler.throwedPacket(outputPacket);
+					}
+					else {
+						System.out.println("Sending!");
+						
+						rtpSession.sendRTPPacket(outputPacket);
+					}
 				}
 
 			}
@@ -402,11 +414,9 @@ public class RtpTextTransmitter implements Runnable {
 		rtpSession.setEmail(email);
 	}
 
-	public int dropOneRtpTextSeqNo() {
-		if (textPacketizer != null) {
-			return textPacketizer.dropOneRtpTextSeqNo();
-		}
-		return 0;
+	public void setThrowPacketDialogHandler(ThrowPacketDialogHandler dialogHandler) {
+		throwPacketDialogHandler = dialogHandler;
+		throwPacketDialogHandler.setRedundancy(redFlagOutgoing);
 	}
 
 	public void sendHexCode(String hexCode) {
