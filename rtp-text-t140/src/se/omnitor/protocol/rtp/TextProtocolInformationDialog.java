@@ -478,8 +478,10 @@ public class TextProtocolInformationDialog extends JDialog {
 	 * @param remoteSdp
 	 *            The string that should be shown in the "Remote" panel
 	 */
-	public void setSdp(String localSdp, String remoteSdp) {
+	public void setLocalSdp(String localSdp) {
 		taLocalSDP.setText(localSdp);
+	}
+	public void setRemoteSdp(String remoteSdp) {
 		taRemoteSDP.setText(remoteSdp);
 	}
 

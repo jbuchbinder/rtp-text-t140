@@ -31,22 +31,11 @@
 package se.omnitor.protocol.rtp;
 
 //import LogClasses and Classes
-import java.io.UnsupportedEncodingException;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import java.awt.Frame;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 
-import java.awt.Color;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Font;
-import java.awt.Insets;
-import java.awt.GridLayout;
-import javax.swing.JPanel;
+
 
 //import se.omnitor.protocol.rtp.PacketAnalyzerPanel.PacketAnalysisPanel.RedLine;
 import se.omnitor.protocol.rtp.packets.RTPPacket;
@@ -125,8 +114,6 @@ public class IncomingPacketsDialogHandler {
 	
 	public void addPacket(RTPPacket packet) {
 		
-		String seqNo = Long.toString(packet.getSequenceNumber() & 0x0000FFFFL);
-		
 		byte[] payload = packet.getPayloadData();
 		byte[] newPayloadData = new byte[payload.length];
 		System.arraycopy(payload, 0, newPayloadData, 0, payload.length);
@@ -155,7 +142,8 @@ public class IncomingPacketsDialogHandler {
 			dialog = new TextProtocolInformationDialog(owner, "Receive log");
 			dialog.setShowSdp(true);
 			dialog.setRedundancy(isRedundancy);
-			dialog.setSdp(inviteSdp, okSdp);
+			dialog.setLocalSdp(inviteSdp);
+			dialog.setRemoteSdp(okSdp);
 		}
 
 		dialog.setVisible(isVisible);
@@ -172,14 +160,11 @@ public class IncomingPacketsDialogHandler {
 		Vector<RedGen> tempRedGenList = new Vector<RedGen>(0, 1);
 		Vector<RedGen> redGenList = new Vector<RedGen>(0, 1);
 		
-		String error = "";
-		
 		while (data.length > walker) {
 			int generation = -1;
 			int time = -1;
 			int length = -1;
-			byte redGenData[] = new byte[0];
-			
+
 			if ((data[walker] & 0x80) > 0) {
 				generation = nextGeneration;
 				nextGeneration++;
@@ -201,14 +186,12 @@ public class IncomingPacketsDialogHandler {
 
 			}
 			else {
-				int pt = data[walker] & 0x7f;
 				byte[] primdata = new byte[0];
 				walker++;
 				
 				for (int lcnt=0; lcnt<tempRedGenList.size(); lcnt++) {
 					RedGen redGen = tempRedGenList.elementAt(lcnt);
 					if (data.length < walker+redGen.getLength()) {
-						error = "Data for redundant generation " + redGen.getGeneration() + " is less than expected blocklength!";
 						walker = data.length;
 						continue;
 					}
@@ -317,10 +300,14 @@ public class IncomingPacketsDialogHandler {
 		return retStr;
 	}
 
-	public void setSdp(String invite, String ok) {
+	public void setInviteSdp(String invite) {
 		this.inviteSdp = invite;
+		dialog.setLocalSdp(inviteSdp);
+	}
+	
+	public void setOkSdp(String ok) {
 		this.okSdp = ok;
-		dialog.setSdp(inviteSdp, okSdp);
+		dialog.setRemoteSdp(okSdp);
 	}
 	
 	public void setRedundancy(boolean isRedundancy) {
