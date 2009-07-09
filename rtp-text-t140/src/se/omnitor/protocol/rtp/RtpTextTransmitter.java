@@ -28,7 +28,6 @@ import se.omnitor.protocol.rtp.text.SyncBuffer;
 import se.omnitor.protocol.rtp.text.TextConstants;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.Frame;
 
 /**
  * An RTP text transmitter that reads characters from a buffer and sends them

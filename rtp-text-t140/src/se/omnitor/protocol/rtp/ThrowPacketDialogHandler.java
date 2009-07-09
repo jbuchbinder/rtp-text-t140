@@ -32,19 +32,8 @@ package se.omnitor.protocol.rtp;
 
 //import LogClasses and Classes
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import java.awt.Frame;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Font;
-import java.awt.Insets;
-import java.awt.GridLayout;
-import javax.swing.JPanel;
-
 import se.omnitor.protocol.rtp.packets.RTPPacket;
 
 /**
@@ -159,8 +148,6 @@ public class ThrowPacketDialogHandler {
 	}
 	
 	public void throwedPacket(RTPPacket packet) {
-		String seqNo = Long.toString(packet.getSequenceNumber() & 0x0000FFFFL);
-		
 		byte[] payload = packet.getPayloadData();
 		byte[] newPayloadData = new byte[payload.length];
 		System.arraycopy(payload, 0, newPayloadData, 0, payload.length);
@@ -207,13 +194,10 @@ public class ThrowPacketDialogHandler {
 		Vector<RedGen> tempRedGenList = new Vector<RedGen>(0, 1);
 		Vector<RedGen> redGenList = new Vector<RedGen>(0, 1);
 		
-		String error = "";
-		
 		while (data.length > walker) {
 			int generation = -1;
 			int time = -1;
 			int length = -1;
-			byte redGenData[] = new byte[0];
 			
 			if ((data[walker] & 0x80) > 0) {
 				generation = nextGeneration;
@@ -237,14 +221,12 @@ public class ThrowPacketDialogHandler {
 
 			}
 			else {
-				int pt = data[walker] & 0x7f;
 				byte[] primdata = new byte[0];
 				walker++;
 				
 				for (int lcnt=0; lcnt<tempRedGenList.size(); lcnt++) {
 					RedGen redGen = tempRedGenList.elementAt(lcnt);
 					if (data.length < walker+redGen.getLength()) {
-						error = "Data for redundant generation " + redGen.getGeneration() + " is less than expected blocklength!";
 						walker = data.length;
 						continue;
 					}
@@ -346,8 +328,12 @@ public class ThrowPacketDialogHandler {
 		return retStr;
 	}
 	
-	public void setSdp(String invite, String ok) {
-		dialog.setSdp(invite, ok);
+	public void setInviteSdp(String invite) {
+		dialog.setLocalSdp(invite);
+	}
+	
+	public void setOkSdp(String ok) {
+		dialog.setRemoteSdp(ok);
 	}
 	
 	public void setRedundancy(boolean isRedundancy) {

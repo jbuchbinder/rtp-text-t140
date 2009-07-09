@@ -42,6 +42,11 @@ import javax.media.format.AudioFormat;
 public class TextFormat extends AudioFormat {
     
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = -618493149322318146L;
+
+	/**
      * The enocding string must be one of those defined in the 
      * latest version of java.nio.charset.Charset
      * 

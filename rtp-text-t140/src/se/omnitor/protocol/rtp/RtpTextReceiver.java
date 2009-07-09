@@ -18,7 +18,6 @@
  */
 package se.omnitor.protocol.rtp;
 
-import java.awt.Frame;
 import java.util.logging.Logger;
 import se.omnitor.protocol.rtp.packets.RTCP_actionListener;
 import se.omnitor.protocol.rtp.packets.RTCPBYEPacket;

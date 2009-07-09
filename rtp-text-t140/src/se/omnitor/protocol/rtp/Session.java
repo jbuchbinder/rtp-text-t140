@@ -53,8 +53,7 @@ public class Session extends java.lang.Object
     /**
      *   Random Offset -32 bit
      */
-    protected static final short RANDOM_OFFSET =
-	(short) Math.abs ( (new Random()).nextInt() & 0x000000FF) ;
+    protected static final short RANDOM_OFFSET = (short) Math.abs ( (new Random()).nextInt() & 0x000000FF) ;
 
     /**
      * Canonical end-point identifier SDES Item.
