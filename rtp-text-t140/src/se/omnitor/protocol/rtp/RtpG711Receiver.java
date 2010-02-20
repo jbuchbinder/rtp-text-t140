@@ -19,6 +19,9 @@
 package se.omnitor.protocol.rtp;
 
 import java.util.logging.Logger;
+
+import se.omnitor.protocol.rtp.audio.G711DePacketizer;
+import se.omnitor.protocol.rtp.audio.RtpAudioBuffer;
 import se.omnitor.protocol.rtp.packets.RTCP_actionListener;
 import se.omnitor.protocol.rtp.packets.RTCPBYEPacket;
 import se.omnitor.protocol.rtp.packets.RTCPReceiverReportPacket;
@@ -26,9 +29,9 @@ import se.omnitor.protocol.rtp.packets.RTCPSDESPacket;
 import se.omnitor.protocol.rtp.packets.RTCPSenderReportPacket;
 import se.omnitor.protocol.rtp.packets.RTP_actionListener;
 import se.omnitor.protocol.rtp.packets.RTPPacket;
-import se.omnitor.protocol.rtp.text.RtpTextDePacketizer;
+//import se.omnitor.protocol.rtp.text.RtpTextDePacketizer;
 import se.omnitor.util.FifoBuffer;
-import se.omnitor.protocol.rtp.text.RtpTextBuffer;
+//import se.omnitor.protocol.rtp.text.RtpTextBuffer;
 
 /**
  * A RTP text receiver who reads incoming RTP text packets, depacketizes them
@@ -37,12 +40,12 @@ import se.omnitor.protocol.rtp.text.RtpTextBuffer;
  * @author Ingemar Persson, Omnitor AB
  * @author Andreas Piirimets, Omnitor AB
  */
-public class RtpTextReceiver implements Runnable,
+public class RtpG711Receiver implements Runnable,
 					RTP_actionListener,
 					RTCP_actionListener {
 
     private StateThread thisThread = null;
-    private RtpTextDePacketizer textDePacketizer;
+    private G711DePacketizer g711DePacketizer;
     private Session rtpSession;
     
     private IncomingPacketsDialogHandler incomingPacketsDialogHandler = null;
@@ -72,7 +75,7 @@ public class RtpTextReceiver implements Runnable,
      * @param redPayloadType The RTP payload number for RED, if used.
      * @param dataBuffer The buffer to write incoming data to
      */
-    public RtpTextReceiver(Session rtpSession,
+    public RtpG711Receiver(Session rtpSession,
 			   String ipAddress,
                            int localPort,
 			   boolean redFlagIncoming,
@@ -89,7 +92,7 @@ public class RtpTextReceiver implements Runnable,
 	this.dataBuffer = dataBuffer;
 
 
-	textDePacketizer = new RtpTextDePacketizer(t140PayloadType,
+	g711DePacketizer = new G711DePacketizer(t140PayloadType,
 						   redPayloadType,
 						   redFlagIncoming);
 
@@ -218,8 +221,8 @@ public class RtpTextReceiver implements Runnable,
     	incomingPacketsDialogHandler.addPacket(rtpPacket);
     }
     
-	RtpTextBuffer inBuffer = new RtpTextBuffer();
-	RtpTextBuffer outBuffer = new RtpTextBuffer();
+    RtpAudioBuffer inBuffer = new RtpAudioBuffer();
+    RtpAudioBuffer outBuffer = new RtpAudioBuffer();
 
 	inBuffer.setData(rtpPacket.getPayloadData());
 	inBuffer.setSequenceNumber(rtpPacket.getSequenceNumber());
@@ -228,7 +231,12 @@ public class RtpTextReceiver implements Runnable,
 	inBuffer.setOffset(0);
 	inBuffer.setSsrc(rtpPacket.getSsrc());
 
-        textDePacketizer.decode(inBuffer, outBuffer);
+        g711DePacketizer.decode(inBuffer, outBuffer);
+        byte[] input = outBuffer.getData();
+        //byte[] output = G711rtp.convertg711alawToLinear(input, input.length);
+        outBuffer.setData(input);
+        outBuffer.setLength(input.length);
+       
 
 	rtpPacket.setPayloadData(null);
 	byte[] datap = outBuffer.getData();

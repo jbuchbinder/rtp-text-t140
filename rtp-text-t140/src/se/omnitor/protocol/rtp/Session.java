@@ -343,7 +343,6 @@ public class Session extends java.lang.Object
     {
 	this.bandwidth = bandwidth;
 
-	System.out.println("Creating RTP session");
 	cname = "";
 	email = "";
 
@@ -515,7 +514,9 @@ public class Session extends java.lang.Object
      */
     public synchronized void stopRTCPReceiverThread()
     {
-	m_RTCPHandler.stopRTCPReceiverThread();
+    	if (m_RTCPHandler != null) {
+    		m_RTCPHandler.stopRTCPReceiverThread();
+    	}
     }
 
     /**

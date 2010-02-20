@@ -120,7 +120,9 @@ public class RTCPThreadHandler extends java.lang.Object
      */
     public void stopRTCPReceiverThread()
     {
-        rtcpReceiverThread.stop();
+    	if (rtcpReceiverThread != null) {
+    		rtcpReceiverThread.stop();
+    	}
     }
 
     /**

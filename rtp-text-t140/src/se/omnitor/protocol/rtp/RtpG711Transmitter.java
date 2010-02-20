@@ -21,11 +21,15 @@ package se.omnitor.protocol.rtp;
 import java.util.Random;
 import se.omnitor.protocol.rtp.Session;
 import se.omnitor.protocol.rtp.StateThread;
+import se.omnitor.protocol.rtp.audio.AudioConstants;
+import se.omnitor.protocol.rtp.audio.AudioSyncBuffer;
+import se.omnitor.protocol.rtp.audio.G711Packetizer;
+import se.omnitor.protocol.rtp.audio.RtpAudioBuffer;
 import se.omnitor.protocol.rtp.packets.RTPPacket;
-import se.omnitor.protocol.rtp.text.RtpTextBuffer;
-import se.omnitor.protocol.rtp.text.RtpTextPacketizer;
-import se.omnitor.protocol.rtp.text.SyncBuffer;
-import se.omnitor.protocol.rtp.text.TextConstants;
+//import se.omnitor.protocol.rtp.text.RtpTextBuffer;
+//import se.omnitor.protocol.rtp.text.RtpTextPacketizer;
+//import se.omnitor.protocol.rtp.text.SyncBuffer;
+//import se.omnitor.protocol.rtp.text.TextConstants;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,33 +40,23 @@ import java.util.logging.Logger;
  * @author Ingemar Persson, Omnitor AB
  * @author Andreas Piirimets, Omnitor AB
  */
-public class RtpTextTransmitter implements Runnable {
+public class RtpG711Transmitter implements Runnable {
 
 	private StateThread thisThread = null;
 	private Session rtpSession;
-	private RtpTextPacketizer textPacketizer;
+	private G711Packetizer g711Packetizer;
 
-	private ThrowPacketDialogHandler throwPacketDialogHandler;
-	
 	private String ipAddress;
 	private int localPort;
 	private int remotePort;
-	private boolean redFlagOutgoing;
 
-	private boolean isEconf351Client = false;
-	
-	private SyncBuffer dataBuffer;
-
-	// EZ: T140 redundancy
-	private se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter redFilter;
-
-	private int redundantT140Generations = 0;
+	private AudioSyncBuffer dataBuffer;
 
 	//EZ: SSRC
 	private long ssrc = 0;
 
 	// declare package and classname
-	public final static String CLASS_NAME = RtpTextTransmitter.class.getName();
+	public final static String CLASS_NAME = RtpG711Transmitter.class.getName();
 	// get an instance of Logger
 	private static Logger logger = Logger.getLogger(CLASS_NAME);
 
@@ -86,21 +80,16 @@ public class RtpTextTransmitter implements Runnable {
 	 * @param dataBuffer The buffer with incoming data. This has to be started
 	 * before transmission begins.
 	 */
-	public RtpTextTransmitter(Session rtpSession,
+	public RtpG711Transmitter(Session rtpSession,
 			boolean startRtpTransmit,
 			String ipAddress,
 			int localPort,
 			int remotePort,
-			int t140PayloadType,
-			boolean redFlagOutgoing,
-			int redPayloadType,
-			int redundantGenerations,
-			boolean redT140FlagOutgoing,
-			int redundantT140Generations,
-			SyncBuffer dataBuffer, boolean econf351Client) {
+			int payloadType,
+			AudioSyncBuffer dataBuffer) {
 
 		// write methodname
-		final String METHOD = "RtpTextTransmitter(Session rtpSession, ...)";
+		final String METHOD = "RtpG711Transmitter(Session rtpSession, ...)";
 		// log when entering a method
 		logger.entering(CLASS_NAME, METHOD, new Object[]{ipAddress, "'" + localPort + "'" , "'" + remotePort + "'"});
 
@@ -109,63 +98,11 @@ public class RtpTextTransmitter implements Runnable {
 		this.ipAddress = ipAddress;
 		this.localPort = localPort;
 		this.remotePort = remotePort;
-		this.redFlagOutgoing = redFlagOutgoing;
-		this.redundantT140Generations = redundantT140Generations;
 		this.dataBuffer = dataBuffer;
-		this.isEconf351Client = econf351Client;
 
-		// using redundancy
-		if (redFlagOutgoing) {
-			dataBuffer.setRedGen(redundantGenerations);
-		}
-		else {
-			dataBuffer.setRedGen(0);
-		}
+		g711Packetizer = new G711Packetizer(payloadType);
 
-		// EZ: T140 redundancy init
-		if (redundantT140Generations>0) {
-			redFilter =
-				new se.omnitor.protocol.rtp.t140redundancy.RedundancyFilter
-				(redFlagOutgoing, redundantT140Generations);
-		}
-
-		// Calculate new buffertime and cpp according to cps
-		/*
-	if (cps > 0) {
-	    cpp = (int)Math.round((double)cps * (double)bufferTime/1000.0);
-	    if (cpp == 0) {
-		cpp = 1;
-	    }
-	    this.bufferTime =
-		Math.round(1000.0 * (double)cpp / (double)cps);
-
-	    useCpp = true;
-	}
-	else {
-	    this.bufferTime = bufferTime;
-	    cpp = 100;
-	    useCpp = false;
-	}
-		 */
-
-		textPacketizer = new RtpTextPacketizer(t140PayloadType,
-				redPayloadType,
-				redundantGenerations);
-
-		if (redFlagOutgoing) {
-			rtpSession.setSendPayloadType(redPayloadType);
-		}
-		else {
-			rtpSession.setSendPayloadType(t140PayloadType);
-		}
-
-		// Changed by Andreas Piirimets 2004-02-16
-		// The transmission should be able to handle a localPort which is
-		// different to the remote port.
-		//rtpSession.openRTPTransmitSocket(remotePort);
-		//rtpSession.openRTPTransmitSocket(localPort, remotePort);
-
-		//rtpSession.createAndStartRTCPSenderThread(localPort+1, remotePort+1);
+		rtpSession.setSendPayloadType(payloadType);
 
 		//Construct SSRC
 		ssrc = createSSRC();
@@ -248,19 +185,10 @@ public class RtpTextTransmitter implements Runnable {
 		RTPPacket outputPacket;
 		byte[] data;
 
-		RtpTextBuffer inBuffer;
-		RtpTextBuffer outBuffer;
-
-		long lastSentTime = 0;
-		long timeNow = 0;
-		int bufferTime;
-
-		logger.logp(Level.FINEST, CLASS_NAME, METHOD, "is using redundacy:" + redFlagOutgoing);
+		RtpAudioBuffer inBuffer;
+		RtpAudioBuffer outBuffer;
 
 		dataBuffer.start();
-		dataBuffer.setData(TextConstants.ZERO_WIDTH_NO_BREAK_SPACE);
-
-		bufferTime = dataBuffer.getBufferTime();
 
 		while (thisThread.checkState() != StateThread.STOP) {
 
@@ -274,17 +202,12 @@ public class RtpTextTransmitter implements Runnable {
 					logger.logp(Level.FINEST, CLASS_NAME, METHOD, "data fetched from buffer, element " + cnt5 + " was '" + data[cnt5] + "' from buffer");
 				}
 
-				if (data.length > 0 || redFlagOutgoing) {
+				if (data.length > 0) {
 					if (thisThread.checkState() == StateThread.STOP) {
 						break;
 					}
 
-					//EZ: Add T.140 redundancy
-					if (redundantT140Generations > 0) {
-						data = redFilter.addRedundancy(data);
-					}
-
-					inBuffer = new RtpTextBuffer();
+					inBuffer = new RtpAudioBuffer();
 					inBuffer.setData(data);
 					if (data == null) {
 						inBuffer.setLength(0);
@@ -292,31 +215,17 @@ public class RtpTextTransmitter implements Runnable {
 						inBuffer.setLength(data.length);
 					}
 
-					outBuffer = new RtpTextBuffer();
+					outBuffer = new RtpAudioBuffer();
 
-					textPacketizer.encode(inBuffer, outBuffer);
-					timeNow = outBuffer.getTimeStamp();
+					///Q3 tech
+					//G711rtp.alawinit();
+					//byte[] input = inBuffer.getData();
+					//byte[] intermediateBuff = G711rtp.convertg711alaw(input, input.length);
+					//inBuffer.setData(intermediateBuff);
+					//inBuffer.setLength(intermediateBuff.length);
+					///////
 
-					//EZ: Mark packets after idle period of bufferTime.
-					//    Allow an additional 250 ms for processing.
-					//    Also mark first packet.
-					//    Ignores time wraparounds.
-					if ((timeNow - lastSentTime) > (bufferTime + 250)) {
-						outBuffer.setMarker(true);
-					} else {
-						outBuffer.setMarker(false);
-					}
-					lastSentTime = timeNow;
-
-					// Temp: adding zero at end. This will be removed.
-					if (isEconf351Client) {
-						byte[] dataToSend = outBuffer.getData();
-						byte[] newData = new byte[dataToSend.length + 1];
-						System.arraycopy(dataToSend, 0, newData, 0,
-								dataToSend.length);
-						newData[dataToSend.length] = 0;
-						outBuffer.setData(newData);
-					}
+					g711Packetizer.encode(inBuffer, outBuffer);
 					outputPacket.setPayloadData(outBuffer.getData());
 					outputPacket.setTimeStamp(outBuffer.getTimeStamp());
 					outputPacket.setSequenceNumber(outBuffer.
@@ -324,13 +233,7 @@ public class RtpTextTransmitter implements Runnable {
 					outputPacket.setMarker(outBuffer.getMarker());
 					outputPacket.setSsrc(ssrc);
 
-					if (throwPacketDialogHandler != null && throwPacketDialogHandler.getNbrOfPacketsToThrow() > 0) {
-						throwPacketDialogHandler.addPacketsToThrow(-1);
-						throwPacketDialogHandler.throwedPacket(outputPacket);
-					}
-					else {
-						rtpSession.sendRTPPacket(outputPacket);
-					}
+					rtpSession.sendRTPPacket(outputPacket);
 				}
 
 			}
@@ -364,7 +267,7 @@ public class RtpTextTransmitter implements Runnable {
 		if (thisThread == null)
 		{
 			//logger.finest("Starting transmit thread.");
-			thisThread = new StateThread(this, "RtpTextTransmitter");
+			thisThread = new StateThread(this, "RtpAudioTransmitter");
 			thisThread.start();
 		}
 	}
@@ -407,24 +310,5 @@ public class RtpTextTransmitter implements Runnable {
 	 */
 	public void setEmail(String email) {
 		rtpSession.setEmail(email);
-	}
-
-	public void setThrowPacketDialogHandler(ThrowPacketDialogHandler dialogHandler) {
-		throwPacketDialogHandler = dialogHandler;
-		throwPacketDialogHandler.setRedundancy(redFlagOutgoing);
-	}
-
-	public void sendHexCode(String hexCode) {
-		byte b[] = new byte[hexCode.length()/2];
-		
-		for (int cnt=0; cnt<b.length; cnt++) {
-			try {
-				b[cnt] = (byte)Integer.parseInt(""+hexCode.substring(cnt*2, cnt*2+2), 16);
-			}
-			catch (NumberFormatException e) {
-				// Ignore!
-			}
-		}
-		dataBuffer.setData(b);
 	}
 }

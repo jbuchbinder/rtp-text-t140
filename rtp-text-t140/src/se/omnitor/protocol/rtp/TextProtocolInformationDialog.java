@@ -25,13 +25,8 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Point;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +39,8 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
@@ -53,7 +50,7 @@ import javax.swing.table.TableColumnModel;
 
 /**
  * This class is a dialog that shows information about text packets.
- * 
+ *
  */
 @SuppressWarnings("serial")
 public class TextProtocolInformationDialog extends JDialog {
@@ -83,7 +80,7 @@ public class TextProtocolInformationDialog extends JDialog {
 	private AbstractPacketListModel packetListTableModel;
 	private PacketDetailsTableModel packetDetailsTableModel;
 
-	private static final int DIALOG_SIZE_X = 550; 
+	private static final int DIALOG_SIZE_X = 550;
 	private static final int DIALOG_SIZE_Y = 650;
 	private static final String HEX_FONT = "Courier New"; // This font must be
 	// monospaced!!
@@ -91,11 +88,11 @@ public class TextProtocolInformationDialog extends JDialog {
 
 	/**
 	 * Initiates the dialog, but does not show it.
-	 * 
+	 *
 	 * Default: hide both "SDP" and "Packets to throw" panels. packets to throw
 	 * is zero packet list contains headings but no rows packet details and hex
 	 * contents only contains the text "Select a packet in the list"
-	 * 
+	 *
 	 * @param owner
 	 *            The parent frame
 	 * @param dialogName
@@ -158,30 +155,30 @@ public class TextProtocolInformationDialog extends JDialog {
 			@Override
 			public void componentResized(ComponentEvent arg0) {
 				Dimension size = spRemoteSDP.getPreferredSize();
-				size.width = spRemoteSDP.getViewport().getWidth() - 
+				size.width = spRemoteSDP.getViewport().getWidth() -
 					spRemoteSDP.getVerticalScrollBar().getWidth();
 				spRemoteSDP.setPreferredSize(size);
 				spLocalSDP.setPreferredSize(size);
 			}
-			
+
 		});
 
 		setHexPanelHeightAsHalfPacketListPanel();
-		
-		//this hack needed for maintain hex panel height as 0.5 packet list panel height 
+
+		//this hack needed for maintain hex panel height as 0.5 packet list panel height
 		spPacketList.addComponentListener(new ComponentAdapter(){
 			@Override
 			public void componentResized(ComponentEvent arg0) {
 				setHexPanelHeightAsHalfPacketListPanel();
 			}
-			
+
 		});
-		
+
 		tblPacketList.setColumnModel(packetListTableModel.getColumnModel());
 		tblPacketList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		tblPacketList.getTableHeader().setReorderingAllowed(false);
 		tblPacketDetail.setEnabled(false);
-		
+
 		tblPacketDetail.getTableHeader().setReorderingAllowed(false);
 
 		// setting controls properties
@@ -192,7 +189,7 @@ public class TextProtocolInformationDialog extends JDialog {
 		taRemoteSDP.setBackground(this.getBackground());
 		taRemoteSDP.setEditable(false);
 		taRemoteSDP.setFont(new Font(SDP_FONT, 0, 11));
-		
+
 		taHexDump.setBackground(this.getBackground());
 		taHexDump.setEditable(false);
 		taHexDump.setFont(new Font(HEX_FONT, 0, 11));
@@ -302,7 +299,7 @@ public class TextProtocolInformationDialog extends JDialog {
 		gbcSPLocalSDP.gridy = 0;
 		gbcSPLocalSDP.fill = GridBagConstraints.BOTH;
 		gbcSPLocalSDP.insets = new Insets(5, 5, 5, 5);
-		
+
 		pnlLocalSDP.add(spLocalSDP, gbcSPLocalSDP);
 		pnlRemoteSDP.add(spRemoteSDP, gbcSPLocalSDP);
 
@@ -406,38 +403,19 @@ public class TextProtocolInformationDialog extends JDialog {
 		gbcHexContents.insets = new Insets(5, 10, 5, 5);
 		getContentPane().add(pnlHexContents, gbcHexContents);
 
-		// adding event processing for table click
-		tblPacketList.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent evt) {
-				Point point = evt.getPoint();
-				int rowIndex = tblPacketList
-						.convertRowIndexToModel(tblPacketList.rowAtPoint(point));
-				tblPacketListRowNavigate(rowIndex);
-			}
-		});
-
-		// adding event processing for table keyborad navigation
-		tblPacketList.addKeyListener(new KeyAdapter() {
-
-			@Override
-			public void keyReleased(KeyEvent evt) {
-				super.keyReleased(evt);
-				if (evt.getKeyCode() == KeyEvent.VK_UP
-						|| evt.getKeyCode() == KeyEvent.VK_DOWN) {
-					int rowIndex = tblPacketList
-							.convertRowIndexToModel(tblPacketList
-									.getSelectedRow());
-					tblPacketListRowNavigate(rowIndex);
-				}
-			}
-
+		// adding event processing for table selection
+		tblPacketList.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    tblPacketListRowNavigate(tblPacketList.getSelectedRow());
+                }
+            }
 		});
 	}
-	
+
 	private void setHexPanelHeightAsHalfPacketListPanel() {
 		Dimension size = spPacketList.getPreferredSize();
-		size.height = spPacketList.getViewport().getHeight() - 
+		size.height = spPacketList.getViewport().getHeight() -
 		spPacketList.getHorizontalScrollBar().getHeight();
 		spPacketList.setPreferredSize(size);
 		Dimension sizeHex = new Dimension(size);
@@ -472,7 +450,7 @@ public class TextProtocolInformationDialog extends JDialog {
 	/**
 	 * Sets SDP strings. The strings include newline characters (\n) that splits
 	 * the lines. These strings shall immediately be shown in the SDP panels.
-	 * 
+	 *
 	 * @param localSdp
 	 *            The string that should be shown in the "Local" panel
 	 * @param remoteSdp
@@ -489,7 +467,7 @@ public class TextProtocolInformationDialog extends JDialog {
 	 * This function either shows or hides the SDP panels (SDP heading, local
 	 * and remote). When hidden, the dialog should be colapsed. I.e. there
 	 * should be no empty space between panels above and under SDP panels.
-	 * 
+	 *
 	 * @param show
 	 *            True means that SDP panels should be shown, false means hide.
 	 */
@@ -502,7 +480,7 @@ public class TextProtocolInformationDialog extends JDialog {
 	 * the following number label. When hidden, the dialog should be colapsed.
 	 * I.e. there should be no empty space between dialog top border and panels
 	 * below.
-	 * 
+	 *
 	 * @param show
 	 *            True means that the two labels should be shown, false means
 	 *            hide.
@@ -513,14 +491,14 @@ public class TextProtocolInformationDialog extends JDialog {
 
 	/**
 	 * Sets the number in the label to the right of "Packets to throw".
-	 * 
+	 *
 	 * @param nbr
 	 *            The number that should be printed in the label.
 	 */
 	public void setPacketsToThrow(int nbr) {
 		lblPacketsToThrowValue.setText(Integer.toString(nbr));
 	}
-	
+
 	public void setRedundancy(boolean isRedundancy) {
 		AbstractPacketListModel newModel;
 		int selectedRow = tblPacketList.getSelectedRow();
@@ -535,7 +513,7 @@ public class TextProtocolInformationDialog extends JDialog {
 		tblPacketList.setModel(packetListTableModel);
 		tblPacketList.setColumnModel(packetListTableModel.getColumnModel());
 		tblPacketList.getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
-		
+
 	}
 
 	/**
@@ -543,7 +521,7 @@ public class TextProtocolInformationDialog extends JDialog {
 	 * for constructor to get information about default values and state. One
 	 * exception: don't hide SDP and/or "Packets to throw" panels/labels, let
 	 * their state remain.
-	 * 
+	 *
 	 */
 	public void clearAll() {
 		lblPacketsToThrowValue.setText("0");
@@ -559,7 +537,7 @@ public class TextProtocolInformationDialog extends JDialog {
 
 	/**
 	 * Adds a packet to the packet list.
-	 * 
+	 *
 	 * @param packet
 	 *            The packet.
 	 */
@@ -571,17 +549,17 @@ public class TextProtocolInformationDialog extends JDialog {
 
 /**
  * Abstract table model class for different packet list views
- *  
+ *
  */
 abstract class AbstractPacketListModel extends AbstractTableModel {
 	protected TableColumnModel columnModel;
 	protected List<TextPacketInfo> packetList;
 	private final static int INITIAL_PACKET_LIST_CAPACITY = 50;
-	
+
 	public AbstractPacketListModel() {
 		packetList = new ArrayList<TextPacketInfo>(INITIAL_PACKET_LIST_CAPACITY);
 		columnModel = new DefaultTableColumnModel();
-		
+
 		TableColumn colSeq = new TableColumn(0);
 		colSeq.setPreferredWidth(50);
 		colSeq.setMaxWidth(50);
@@ -591,10 +569,10 @@ abstract class AbstractPacketListModel extends AbstractTableModel {
 		colPT.setPreferredWidth(30);
 		colPT.setMaxWidth(30);
 		colPT.setHeaderValue("PT");
-		
+
 		columnModel.addColumn(colSeq);
 		columnModel.addColumn(colPT);
-		
+
 		initializeTableModel();
 	}
 
@@ -602,31 +580,31 @@ abstract class AbstractPacketListModel extends AbstractTableModel {
 	 * This method must be overrided
 	 */
 	protected abstract void initializeTableModel();
-	
+
 	public TableColumnModel getColumnModel() {
 		return columnModel;
 	}
 
-	@Override
+	//@Override
 	public int getColumnCount() {
 		return columnModel.getColumnCount();
 	}
 
-	@Override
+	//@Override
 	public int getRowCount() {
 		return packetList.size();
 	}
 
 	@Override
-	public String getColumnName(int column) {
+    public String getColumnName(int column) {
 		return (String) columnModel.getColumn(column).getHeaderValue();
 	}
-	
+
 	public void setPacketList(List<TextPacketInfo> packetList) {
 		this.packetList = packetList;
 		fireTableDataChanged();
 	}
-	
+
 	public List<TextPacketInfo> getPacketList() {
 		return packetList;
 	}
@@ -643,13 +621,13 @@ abstract class AbstractPacketListModel extends AbstractTableModel {
 	public void addTextPacketInfo(TextPacketInfo textPacketInfo) {
 		packetList.add(textPacketInfo);
 		SwingUtilities.invokeLater(new Runnable() {
-			@Override
+			//@Override
 			public void run() {
 				fireTableRowsInserted(getRowCount(), getRowCount());
 			}
 
 		});
-	}		
+	}
 }
 
 /**
@@ -659,16 +637,16 @@ abstract class AbstractPacketListModel extends AbstractTableModel {
 @SuppressWarnings("serial")
 class PacketListTableModelRD extends AbstractPacketListModel {
 	private static final String DATA_FONT = "Courier New";
-	
+
 	public PacketListTableModelRD() {
 		super();
 	}
-	
+
 	@Override
 	protected void initializeTableModel() {
-		
+
 		final Font dataFont = new Font(DATA_FONT, 0, 11);
-		
+
 		// setting packet list columns and it's preferences
 		TableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
 
@@ -683,29 +661,29 @@ class PacketListTableModelRD extends AbstractPacketListModel {
 				return c;
 			}
 		};
-		
+
 		TableColumn colTime = new TableColumn(2);
 		colTime.setPreferredWidth(100);
 		colTime.setHeaderValue("Time");
 		colTime.setCellRenderer(cellRenderer);
-		
+
 		TableColumn colLength = new TableColumn(3);
 		colLength.setPreferredWidth(50);
 		colLength.setHeaderValue("Length");
 		colLength.setCellRenderer(cellRenderer);
-		
+
 		TableColumn colData = new TableColumn(4);
 		colData.setPreferredWidth(100);
 		colData.setHeaderValue("Data");
 		colData.setCellRenderer(cellRenderer);
-		
+
 		columnModel.addColumn(colTime);
 		columnModel.addColumn(colLength);
 		columnModel.addColumn(colData);
-		
+
 	}
 
-	@Override
+	//@Override
 	public Object getValueAt(int row, int column) {
 		TextPacketInfo textPacketInfo;
 		textPacketInfo = packetList.get(row);
@@ -726,7 +704,7 @@ class PacketListTableModelRD extends AbstractPacketListModel {
 		return null;
 	}
 
-	
+
 }
 
 /**
@@ -794,7 +772,7 @@ class PacketListTableModel extends AbstractPacketListModel {
 
 	}
 
-	@Override
+	//@Override
 	public Object getValueAt(int row, int column) {
 		TextPacketInfo textPacketInfo;
 		if (packetList == null) return null;
@@ -832,7 +810,7 @@ class PacketListTableModel extends AbstractPacketListModel {
 
 /**
  * Table Model for packet details table
- * 
+ *
  */
 @SuppressWarnings("serial")
 class PacketDetailsTableModel extends AbstractTableModel {
@@ -888,7 +866,7 @@ class PacketDetailsTableModel extends AbstractTableModel {
 		columnModel.addColumn(colLength);
 		columnModel.addColumn(colData);
 	}
-	
+
 	public void setRedundantGenerations(List<RedGen> generationsList) {
 		this.generationsList = generationsList;
 	}
@@ -897,22 +875,22 @@ class PacketDetailsTableModel extends AbstractTableModel {
 		return columnModel;
 	}
 
-	@Override
+	//@Override
 	public int getColumnCount() {
 		return columnModel.getColumnCount();
 	}
 
-	@Override
+	//@Override
 	public int getRowCount() {
 		return (generationsList == null)? 0: generationsList.size();
 	}
 
 	@Override
-	public String getColumnName(int column) {
+    public String getColumnName(int column) {
 		return (String) columnModel.getColumn(column).getHeaderValue();
 	}
 
-	@Override
+	//@Override
 	public Object getValueAt(int row, int column) {
 		RedGen redGen = generationsList.get(row);
 		switch (column) {
@@ -940,7 +918,7 @@ class PacketDetailsTableModel extends AbstractTableModel {
 
 /**
  * Helper class for HEX dumping byte array to String
- * 
+ *
  */
 class HexDump {
 
@@ -960,7 +938,7 @@ class HexDump {
 
 	/**
 	 * Dump an array of bytes to String object.
-	 * 
+	 *
 	 * @param data
 	 *            the byte array to be dumped
 	 */

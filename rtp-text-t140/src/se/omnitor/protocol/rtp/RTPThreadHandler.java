@@ -612,13 +612,6 @@ public class RTPThreadHandler implements Runnable {
                 //e.printStackTrace();
             } catch (IOException ioe) {
                 // It's OK if sending packets are not possible due to IO problem
-            } catch (Exception e) {
-            	if (e instanceof java.lang.InterruptedException) {
-            		// This is norally due to hangup, just ignore.
-            	}
-            	else {
-            		e.printStackTrace();
-            	}
             }
         }
 
