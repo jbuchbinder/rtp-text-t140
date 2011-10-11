@@ -6,7 +6,12 @@
   </path>
   <property name="ant.reuse.loader" value="true"/> 
 
-  <target name="javac" description="Compile java source">
+  <target name="clean">
+    <delete dir="bin" failonerror="false" />
+    <delete dir="doc" failonerror="false" />
+  </target>
+
+  <target name="javac" depends="clean" description="Compile java source">
     <mkdir dir="bin" />
     <javac srcdir="src" includes="**" encoding="utf-8"
         destdir="bin"
@@ -16,8 +21,15 @@
     </javac>
   </target>
 
-  <target name="build" depends="javac" description="Build this project" />
+  <target name="build" depends="javac, javadoc" description="Build this project" />
 
   <target name="main" depends="build">
+  </target>
+
+  <target name="javadoc" depends="clean">
+    <mkdir dir="doc" />
+    <javadoc destdir="doc" Doctitle="RTP text/t140 library" Header="RTP text/t140 library" breakiterator="true" classpath="src" overview="javadoc-overview.html" group="se.omnitor.media.protocol.text.t140 se.omnitor.media.content.text.t140 se.omnitor.protocol.rtp.text">
+      <fileset dir="src" />
+    </javadoc>
   </target>
 </project>
