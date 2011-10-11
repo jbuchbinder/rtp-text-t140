@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<project name="rtp-text-t140" default="main" basedir=".">
+  <path id="project.class.path">
+    <pathelement location="bin"/>
+    <fileset dir="lib" includes="**/*.jar"/>
+  </path>
+  <property name="ant.reuse.loader" value="true"/> 
+
+  <target name="javac" description="Compile java source">
+    <mkdir dir="bin" />
+    <javac srcdir="src" includes="**" encoding="utf-8"
+        destdir="bin"
+        source="1.5" target="1.5" nowarn="true"
+        debug="true" debuglevel="lines,vars,source">
+      <classpath refid="project.class.path"/>
+    </javac>
+  </target>
+
+  <target name="build" depends="javac" description="Build this project" />
+
+  <target name="main" depends="build">
+  </target>
+</project>
